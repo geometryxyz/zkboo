@@ -40,12 +40,17 @@ impl<D: Digest> Commitment<D> {
     }  
 
     pub fn verify_opening<U: Serialize, T: Serialize>(&self, blinding: &Blinding<U>, message: &T) -> Result<bool, Error> {
+        let digest_len = <D as Digest>::output_size();
+        if HASH_LEN != digest_len {
+            return Err(Error::HashLenError(HASH_LEN, digest_len));
+        }
         let blinding = bincode::serialize(blinding.as_ref()).map_err(|_| Error::SerializationError)?;
         let message = bincode::serialize(message).map_err(|_| Error::SerializationError)?;
 
         let mut hasher: D = Digest::new_with_prefix(&blinding);
         hasher.update(&message);
 
+        // safe to unwrap since we check digest output is of right side
         let claimed_data: [u8; HASH_LEN] = hasher.finalize().to_vec().try_into().unwrap();
         Ok(claimed_data == self.data)
     }
