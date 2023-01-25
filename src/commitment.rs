@@ -3,9 +3,7 @@ use std::marker::PhantomData;
 use serde::Serialize;
 use sha3::Digest;
 
-use crate::error::Error;
-
-const HASH_LEN: usize = 32;
+use crate::{error::Error, config::HASH_LEN};
 
 pub struct Blinding<T: Serialize>(T);
 impl<T: Serialize> AsRef<T> for Blinding<T> {

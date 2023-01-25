@@ -8,3 +8,4 @@ pub mod prover;
 pub mod view;
 pub mod commitment;
 pub mod error;
+pub mod config;
