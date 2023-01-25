@@ -6,3 +6,5 @@ pub mod party;
 pub mod prng;
 pub mod prover;
 pub mod view;
+pub mod commitment;
+pub mod error;
