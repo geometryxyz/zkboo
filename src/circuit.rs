@@ -23,14 +23,14 @@ mod circuit_tests {
         ops::{BitAnd, BitXor},
     };
 
-    use rand::thread_rng;
+    use rand::{thread_rng, rngs::ThreadRng};
 
     use super::Circuit;
     use crate::{
         gadgets::{mpc_and, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
-        prover::Prover,
+        prover::Prover, prng::generate_tapes,
     };
 
     // computes: (x1 ^ x2) & (x3 ^ x4) & x5
@@ -91,18 +91,18 @@ mod circuit_tests {
                 (a1, b1),
                 (a2, b2),
                 (a3, b3),
-                &mut p1.view,
-                &mut p2.view,
-                &mut p3.view,
+                p1,
+                p2,
+                p3,
             );
 
             let (o1, o2, o3) = mpc_and(
                 (ab1, x5),
                 (ab2, y5),
                 (ab3, z5),
-                &mut p1.view,
-                &mut p2.view,
-                &mut p3.view,
+                p1,
+                p2,
+                p3,
             );
 
             println!("output is: {}", o1.value ^ o2.value ^ o3.value);
@@ -112,12 +112,14 @@ mod circuit_tests {
     #[test]
     fn test_circuit1() {
         let mut rng = thread_rng();
-        let input: Vec<GF2Word<_>> = [5u8, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
+        let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
         let output = SimpleCircuit1::compute(&input);
         println!("{:?}", output);
 
+        let tapes = generate_tapes::<u32, ThreadRng>(2, 1, &mut rng);
+
         let circuit = SimpleCircuit1 {};
-        Prover::prove(&mut rng, &input, &circuit);
+        Prover::prove(&mut rng, &input, &tapes, &circuit);
     }
 }

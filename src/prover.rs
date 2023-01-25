@@ -42,12 +42,13 @@ where
     pub fn init_parties<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
+        tapes: &[Vec<GF2Word<T>>; 3],
     ) -> (Party<T>, Party<T>, Party<T>) {
         let (share_1, share_2, share_3) = Self::share(rng, input);
 
-        let p1 = Party::new(share_1, vec![]);
-        let p2 = Party::new(share_2, vec![]);
-        let p3 = Party::new(share_3, vec![]);
+        let p1 = Party::new(share_1, tapes[0].clone());
+        let p2 = Party::new(share_2, tapes[1].clone());
+        let p3 = Party::new(share_3, tapes[2].clone());
 
         (p1, p2, p3)
     }
@@ -55,9 +56,10 @@ where
     pub fn prove<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
+        tapes: &[Vec<GF2Word<T>>; 3],
         circuit: &impl Circuit<T>,
     ) {
-        let (mut p1, mut p2, mut p3) = Self::init_parties(rng, input);
+        let (mut p1, mut p2, mut p3) = Self::init_parties(rng, input, tapes);
         circuit.compute_23_decomposition(&mut p1, &mut p2, &mut p3);
     }
 }

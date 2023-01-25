@@ -1,17 +1,15 @@
+use sha3::{
+    digest::{FixedOutputReset, OutputSizeUser},
+    Digest,
+};
 use std::marker::PhantomData;
-use sha3::{digest::{OutputSizeUser, FixedOutputReset}, Digest};
 
 pub struct SigmaProtocolStatelessFiatShamir<D: Clone + Digest> {
     _d: PhantomData<D>,
 }
 
 impl<D: Clone + Digest> SigmaProtocolStatelessFiatShamir<D> {
-    pub fn sample_trits(
-        seed: &[u8],
-        public_data: &[u8],
-        prover_msg: &[u8],
-        r: usize,
-    ) -> Vec<u8> {
+    pub fn sample_trits(seed: &[u8], public_data: &[u8], prover_msg: &[u8], r: usize) -> Vec<u8> {
         let with_prefix = |prefix: u8| {
             let mut hasher = D::new_with_prefix(&[prefix]);
             hasher.update(seed);
@@ -56,7 +54,7 @@ impl<D: Clone + Digest> SigmaProtocolStatelessFiatShamir<D> {
 }
 
 pub struct SigmaFS<D: Digest + FixedOutputReset> {
-    hasher: D
+    hasher: D,
 }
 
 impl<D: Digest + FixedOutputReset> SigmaFS<D> {
@@ -109,7 +107,7 @@ impl<D: Digest + FixedOutputReset> SigmaFS<D> {
 
 #[cfg(test)]
 mod test_fs {
-    use super::{SigmaProtocolStatelessFiatShamir, SigmaFS};
+    use super::{SigmaFS, SigmaProtocolStatelessFiatShamir};
     use sha3::Keccak256;
 
     #[test]
@@ -119,7 +117,12 @@ mod test_fs {
         let prover_msg = b"this from prover";
         let r = 137usize;
 
-        let trits = SigmaProtocolStatelessFiatShamir::<Keccak256>::sample_trits(seed, public_data, prover_msg, r);
+        let trits = SigmaProtocolStatelessFiatShamir::<Keccak256>::sample_trits(
+            seed,
+            public_data,
+            prover_msg,
+            r,
+        );
         for trit in trits {
             assert!(trit == 0 || trit == 1 || trit == 2);
         }
