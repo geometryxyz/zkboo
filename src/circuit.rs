@@ -17,6 +17,7 @@ where
     fn compute(input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
     fn compute_23_decomposition(&self, p1: &mut Party<T>, p2: &mut Party<T>, p3: &mut Party<T>) -> TwoThreeDecOutput<T>;
     fn party_output_len(&self) -> usize; 
+    fn num_of_mul_gates(&self) -> usize;
 }
 
 #[cfg(test)]
@@ -101,10 +102,14 @@ mod circuit_tests {
         fn party_output_len(&self) -> usize {
             1
         }
+
+        fn num_of_mul_gates(&self) -> usize {
+            2
+        }
     }
 
     #[test]
-    fn test_circuit1() {
+    fn test_single_repetition() {
         let mut rng = thread_rng();
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
@@ -113,9 +118,21 @@ mod circuit_tests {
         let tapes = generate_tapes::<u32, ThreadRng>(2, 1, &mut rng);
 
         let circuit = SimpleCircuit1 {};
-        let decomposition_output = Prover::prove(&mut rng, &input, &tapes, &circuit);
+        let decomposition_output = Prover::prove_repetition(&mut rng, &input, &tapes, &circuit);
 
         let reconstructed_output = Verifier::reconstruct(&circuit, &decomposition_output);
         assert_eq!(output, reconstructed_output)
+    }
+
+    #[test]
+    fn test_full_run() {
+        let mut rng = thread_rng();
+        let num_of_repetitions = 20;
+        let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
+
+        let output = SimpleCircuit1::compute(&input);
+
+        let circuit = SimpleCircuit1 {};
+        Prover::prove(&mut rng, &input, &circuit, num_of_repetitions);
     }
 }

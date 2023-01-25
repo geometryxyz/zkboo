@@ -8,7 +8,7 @@ use std::{
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    party::Party,
+    party::Party, prng::generate_tapes,
 };
 
 pub struct Prover<T>
@@ -53,7 +53,7 @@ where
         (p1, p2, p3)
     }
 
-    pub fn prove<R: RngCore + CryptoRng>(
+    pub fn prove_repetition<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
         tapes: &[Vec<GF2Word<T>>; 3],
@@ -61,6 +61,33 @@ where
     ) -> TwoThreeDecOutput<T> {
         let (mut p1, mut p2, mut p3) = Self::init_parties(rng, input, tapes);
         circuit.compute_23_decomposition(&mut p1, &mut p2, &mut p3)
+    }
+
+    pub fn prove<R: RngCore + CryptoRng>(
+        rng: &mut R,
+        input: &Vec<GF2Word<T>>,
+        circuit: &impl Circuit<T>,
+        num_of_repetitions: usize
+    ) {
+        let num_of_mul_gates = circuit.num_of_mul_gates();
+
+        // TODO: consider nicer tapes handling
+        let tapes = generate_tapes::<T, R>(num_of_mul_gates, num_of_repetitions, rng);
+        let tapes_0: Vec<&[GF2Word<T>]> = tapes[0].iter().as_slice().chunks(num_of_mul_gates).collect();
+        let tapes_1: Vec<&[GF2Word<T>]> = tapes[1].iter().as_slice().chunks(num_of_mul_gates).collect();
+        let tapes_2: Vec<&[GF2Word<T>]> = tapes[2].iter().as_slice().chunks(num_of_mul_gates).collect();
+
+        let mut outputs = Vec::<TwoThreeDecOutput<T>>::with_capacity(num_of_repetitions);
+
+        for i in 0..num_of_repetitions {
+            let tapes = [tapes_0[i].to_vec(), tapes_1[i].to_vec(), tapes_2[i].to_vec()];
+            outputs.push(
+                Self::prove_repetition(rng, input, &tapes, circuit)
+            );
+        }
+
+        
+
     }
 }
 
