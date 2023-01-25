@@ -25,7 +25,6 @@ where
         tape_p1.push(T::gen_rand(rng).into());
         tape_p2.push(T::gen_rand(rng).into());
         tape_p3.push(T::gen_rand(rng).into());
-
     }
     [tape_p1, tape_p2, tape_p3]
 }

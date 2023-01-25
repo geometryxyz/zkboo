@@ -23,14 +23,15 @@ mod circuit_tests {
         ops::{BitAnd, BitXor},
     };
 
-    use rand::{thread_rng, rngs::ThreadRng};
+    use rand::{rngs::ThreadRng, thread_rng};
 
     use super::Circuit;
     use crate::{
         gadgets::{mpc_and, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
-        prover::Prover, prng::generate_tapes,
+        prng::generate_tapes,
+        prover::Prover,
     };
 
     // computes: (x1 ^ x2) & (x3 ^ x4) & x5
@@ -87,23 +88,9 @@ mod circuit_tests {
             let (a1, a2, a3) = mpc_xor((x1, x2), (y1, y2), (z1, z2));
             let (b1, b2, b3) = mpc_xor((x3, x4), (y3, y4), (z3, z4));
 
-            let (ab1, ab2, ab3) = mpc_and(
-                (a1, b1),
-                (a2, b2),
-                (a3, b3),
-                p1,
-                p2,
-                p3,
-            );
+            let (ab1, ab2, ab3) = mpc_and((a1, b1), (a2, b2), (a3, b3), p1, p2, p3);
 
-            let (o1, o2, o3) = mpc_and(
-                (ab1, x5),
-                (ab2, y5),
-                (ab3, z5),
-                p1,
-                p2,
-                p3,
-            );
+            let (o1, o2, o3) = mpc_and((ab1, x5), (ab2, y5), (ab3, z5), p1, p2, p3);
 
             println!("output is: {}", o1.value ^ o2.value ^ o3.value);
         }
