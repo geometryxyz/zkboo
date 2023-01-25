@@ -9,3 +9,4 @@ pub mod view;
 pub mod commitment;
 pub mod error;
 pub mod config;
+pub mod verifier;

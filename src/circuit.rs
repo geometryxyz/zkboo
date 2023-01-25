@@ -8,12 +8,15 @@ use crate::{
     party::Party,
 };
 
+pub type TwoThreeDecOutput<T> = (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>);
+
 pub trait Circuit<T>
 where
     T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
 {
-    fn compute(input: &Vec<GF2Word<T>>) -> GF2Word<T>;
-    fn compute_23_decomposition(&self, p1: &mut Party<T>, p2: &mut Party<T>, p3: &mut Party<T>);
+    fn compute(input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
+    fn compute_23_decomposition(&self, p1: &mut Party<T>, p2: &mut Party<T>, p3: &mut Party<T>) -> TwoThreeDecOutput<T>;
+    fn party_output_len(&self) -> usize; 
 }
 
 #[cfg(test)]
@@ -25,13 +28,13 @@ mod circuit_tests {
 
     use rand::{rngs::ThreadRng, thread_rng};
 
-    use super::Circuit;
+    use super::{Circuit, TwoThreeDecOutput};
     use crate::{
         gadgets::{mpc_and, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
         prng::generate_tapes,
-        prover::Prover,
+        prover::Prover, verifier::Verifier,
     };
 
     // computes: (x1 ^ x2) & (x3 ^ x4) & x5
@@ -47,10 +50,10 @@ mod circuit_tests {
             + BytesInfo
             + GenRand,
     {
-        fn compute(input: &Vec<GF2Word<T>>) -> GF2Word<T> {
+        fn compute(input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
             assert_eq!(input.len(), 5);
 
-            (input[0] ^ input[1]) & (input[2] ^ input[3]) & input[4]
+            vec![(input[0] ^ input[1]) & (input[2] ^ input[3]) & input[4]]
         }
 
         fn compute_23_decomposition(
@@ -58,7 +61,7 @@ mod circuit_tests {
             p1: &mut Party<T>,
             p2: &mut Party<T>,
             p3: &mut Party<T>,
-        ) {
+        ) -> TwoThreeDecOutput<T> {
             assert_eq!(p1.view.input.len(), 5);
             assert_eq!(p2.view.input.len(), 5);
             assert_eq!(p3.view.input.len(), 5);
@@ -92,7 +95,11 @@ mod circuit_tests {
 
             let (o1, o2, o3) = mpc_and((ab1, x5), (ab2, y5), (ab3, z5), p1, p2, p3);
 
-            println!("output is: {}", o1.value ^ o2.value ^ o3.value);
+            (vec![o1], vec![o2], vec![o3])
+        }
+
+        fn party_output_len(&self) -> usize {
+            1
         }
     }
 
@@ -102,11 +109,13 @@ mod circuit_tests {
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
         let output = SimpleCircuit1::compute(&input);
-        println!("{:?}", output);
 
         let tapes = generate_tapes::<u32, ThreadRng>(2, 1, &mut rng);
 
         let circuit = SimpleCircuit1 {};
-        Prover::prove(&mut rng, &input, &tapes, &circuit);
+        let decomposition_output = Prover::prove(&mut rng, &input, &tapes, &circuit);
+
+        let reconstructed_output = Verifier::reconstruct(&circuit, &decomposition_output);
+        assert_eq!(output, reconstructed_output)
     }
 }

@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    circuit::Circuit,
+    circuit::{Circuit, TwoThreeDecOutput},
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     party::Party,
 };
@@ -58,9 +58,9 @@ where
         input: &Vec<GF2Word<T>>,
         tapes: &[Vec<GF2Word<T>>; 3],
         circuit: &impl Circuit<T>,
-    ) {
+    ) -> TwoThreeDecOutput<T> {
         let (mut p1, mut p2, mut p3) = Self::init_parties(rng, input, tapes);
-        circuit.compute_23_decomposition(&mut p1, &mut p2, &mut p3);
+        circuit.compute_23_decomposition(&mut p1, &mut p2, &mut p3)
     }
 }
 
