@@ -1,5 +1,5 @@
 use rand_core::{CryptoRng, RngCore};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sha3::{digest::FixedOutputReset, Digest};
 use std::{
     fmt::Display,
@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
-    commitment::{self, Blinding, Commitment},
+    commitment::{Blinding, Commitment},
     data_structures::{Proof, PublicInput},
     error::Error,
     fs::SigmaFS,

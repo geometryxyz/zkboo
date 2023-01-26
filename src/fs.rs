@@ -138,7 +138,7 @@ impl<D: Digest + FixedOutputReset> SigmaFS<D> {
 
 #[cfg(test)]
 mod test_fs {
-    use super::{SigmaFS, SigmaProtocolStatelessFiatShamir};
+    use super::SigmaProtocolStatelessFiatShamir;
     use sha3::Keccak256;
 
     #[test]

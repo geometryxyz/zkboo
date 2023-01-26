@@ -146,7 +146,7 @@ mod circuit_tests {
         let num_of_repetitions = 20;
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
-        let output = SimpleCircuit1::compute(&input);
+        let _ = SimpleCircuit1::compute(&input);
 
         let circuit = SimpleCircuit1 {};
         Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions)
