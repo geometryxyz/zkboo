@@ -9,8 +9,8 @@ use std::{
 
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
-    commitment::{Commitment},
-    data_structures::{Proof, PublicInput, PartyExecution},
+    commitment::Commitment,
+    data_structures::{PartyExecution, Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},

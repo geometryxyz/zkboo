@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+    error::Error,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     party::Party,
 };
@@ -28,6 +29,7 @@ where
         p2: &mut Party<T>,
         p3: &mut Party<T>,
     ) -> TwoThreeDecOutput<T>;
+    fn simulate_two_parties(&self, p: &mut Party<T>, p_next: &mut Party<T>) -> Result<(), Error>;
     fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
@@ -35,7 +37,7 @@ where
 #[cfg(test)]
 mod circuit_tests {
     use std::{
-        fmt::Display,
+        fmt::{Debug, Display},
         ops::{BitAnd, BitXor},
     };
 
@@ -44,7 +46,8 @@ mod circuit_tests {
 
     use super::{Circuit, TwoThreeDecOutput};
     use crate::{
-        gadgets::{mpc_and, mpc_xor},
+        error::Error,
+        gadgets::{and_verify, mpc_and, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
         prng::generate_tapes,
@@ -60,6 +63,8 @@ mod circuit_tests {
         T: Copy
             + Default
             + Display
+            + Debug
+            + PartialEq
             + BitAnd<Output = T>
             + BitXor<Output = T>
             + BitUtils
@@ -114,6 +119,42 @@ mod circuit_tests {
             (vec![o1], vec![o2], vec![o3])
         }
 
+        fn simulate_two_parties(
+            &self,
+            p: &mut Party<T>,
+            p_next: &mut Party<T>,
+        ) -> Result<(), Error> {
+            assert_eq!(p.view.input.len(), 5);
+            assert_eq!(p_next.view.input.len(), 5);
+
+            let (x1, x2, x3, x4, x5) = (
+                p.view.input[0],
+                p.view.input[1],
+                p.view.input[2],
+                p.view.input[3],
+                p.view.input[4],
+            );
+
+            let (y1, y2, y3, y4, y5) = (
+                p_next.view.input[0],
+                p_next.view.input[1],
+                p_next.view.input[2],
+                p_next.view.input[3],
+                p_next.view.input[4],
+            );
+
+            let a1 = x1 ^ x2;
+            let b1 = x3 ^ x4;
+
+            let a2 = y1 ^ y2;
+            let b2 = y3 ^ y4;
+
+            let (ab1, ab2) = and_verify((a1, b1), (a2, b2), p, p_next)?;
+            let _ = and_verify((ab1, x5), (ab2, y5), p, p_next)?;
+
+            Ok(())
+        }
+
         fn party_output_len(&self) -> usize {
             1
         }
@@ -135,8 +176,14 @@ mod circuit_tests {
         let circuit = SimpleCircuit1 {};
         let repetition_output = Prover::prove_repetition(&mut rng, &input, &tapes, &circuit);
 
-        let reconstructed_output =
-            Verifier::<u32, Keccak256>::reconstruct(&circuit, &repetition_output.party_outputs);
+        let reconstructed_output = Verifier::<u32, Keccak256>::reconstruct(
+            &circuit,
+            (
+                &repetition_output.party_outputs.0,
+                &repetition_output.party_outputs.1,
+                &repetition_output.party_outputs.2,
+            ),
+        );
         assert_eq!(output, reconstructed_output)
     }
 
@@ -146,12 +193,13 @@ mod circuit_tests {
         let num_of_repetitions = 20;
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
-        let _ = SimpleCircuit1::compute(&input);
+        let output = SimpleCircuit1::compute(&input);
 
         let circuit = SimpleCircuit1 {};
-        let proof = Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions)
-            .unwrap();
-
-        Verifier::verify(&proof, &circuit, num_of_repetitions).unwrap();
+        let proof =
+            Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions)
+                .unwrap();
+                
+        Verifier::verify(&proof, &circuit, num_of_repetitions, &output).unwrap();
     }
 }

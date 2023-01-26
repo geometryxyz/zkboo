@@ -3,14 +3,15 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
-use rand::{RngCore, CryptoRng};
+use rand::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 
 use crate::{
     commitment::{Blinding, Commitment},
+    error::Error,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    view::View, error::Error,
+    view::View,
 };
 
 // pairs of (tape, view)
@@ -52,7 +53,6 @@ where
         Ok((blinding, commitment))
     }
 }
-
 
 #[derive(Serialize)]
 pub struct PublicInput<'a, T>

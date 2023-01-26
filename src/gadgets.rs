@@ -1,9 +1,10 @@
 use std::{
-    fmt::Display,
+    fmt::{Debug, Display},
     ops::{BitAnd, BitXor},
 };
 
 use crate::{
+    error::Error,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     party::Party,
 };
@@ -70,4 +71,37 @@ where
     p3.view.send_msg(output_p3);
 
     (output_p1, output_p2, output_p3)
+}
+
+pub fn and_verify<T>(
+    input_p: (GF2Word<T>, GF2Word<T>),
+    input_p_next: (GF2Word<T>, GF2Word<T>),
+    p: &mut Party<T>,
+    p_next: &mut Party<T>,
+) -> Result<(GF2Word<T>, GF2Word<T>), Error>
+where
+    T: Copy
+        + Default
+        + Display
+        + Debug
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand
+        + PartialEq,
+{
+    let ri = p.read_tape();
+    let ri_next = p_next.read_tape();
+
+    let output_p = (input_p.0 & input_p.1)
+        ^ (input_p.0 & input_p_next.1)
+        ^ (input_p.1 & input_p_next.0)
+        ^ (ri ^ ri_next);
+
+    if output_p != p.read_view() {
+        return Err(Error::VerificationError);
+    }
+
+    Ok((output_p, p_next.read_view()))
 }

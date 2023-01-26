@@ -45,6 +45,14 @@ where
         }
     }
 
+    pub fn from_tape_and_view(view: View<T>, tape: Vec<GF2Word<T>>) -> Self {
+        Self {
+            tape,
+            view,
+            tape_offset: 0,
+        }
+    }
+
     /*
         This function as agnostic to tape approach (full tape computed or PRNG )
     */
@@ -52,5 +60,9 @@ where
         let ri = self.tape[self.tape_offset];
         self.tape_offset += 1;
         ri
+    }
+
+    pub fn read_view(&mut self) -> GF2Word<T> {
+        self.view.read_next()
     }
 }
