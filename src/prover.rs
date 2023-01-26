@@ -225,6 +225,7 @@ where
 
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
 
+        let mut tapes = Vec::<Vec<GF2Word<T>>>::with_capacity(2 * num_of_repetitions);
         let mut views = Vec::with_capacity(2 * num_of_repetitions);
         let mut blinders = Vec::with_capacity(2 * num_of_repetitions);
 
@@ -237,12 +238,29 @@ where
 
             blinders.push(std::mem::take(&mut all_blinders[i0]));
             blinders.push(std::mem::take(&mut all_blinders[i1]));
+
+            match party_index {
+                0 => {
+                    tapes.push(tapes_0[repetition].to_vec());
+                    tapes.push(tapes_1[repetition].to_vec());
+                }
+                1 => {
+                    tapes.push(tapes_1[repetition].to_vec());
+                    tapes.push(tapes_2[repetition].to_vec());
+                }
+                2 => {
+                    tapes.push(tapes_2[repetition].to_vec());
+                    tapes.push(tapes_0[repetition].to_vec());
+                }
+                _ => panic!("It's not trit"),
+            }
         }
 
         Ok(Proof {
             outputs,
             commitments,
             views,
+            tapes,
             blinders,
         })
     }

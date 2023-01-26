@@ -46,5 +46,6 @@ where
     pub outputs: Vec<Vec<GF2Word<T>>>,
     pub commitments: Vec<Commitment<D>>,
     pub views: Vec<View<T>>,
+    pub tapes: Vec<Vec<GF2Word<T>>>,
     pub blinders: Vec<Blinding<u64>>,
 }

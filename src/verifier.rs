@@ -4,12 +4,16 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
+use serde::Serialize;
+use sha3::Digest;
+
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
+    data_structures::Proof,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
 };
 
-pub struct Verifier<T>
+pub struct Verifier<T, D>
 where
     T: Copy
         + Default
@@ -19,11 +23,13 @@ where
         + BitUtils
         + BytesInfo
         + GenRand,
+    D: Digest,
 {
     _t: PhantomData<T>,
+    _d: PhantomData<D>,
 }
 
-impl<T> Verifier<T>
+impl<T, D> Verifier<T, D>
 where
     T: Copy
         + Default
@@ -32,8 +38,14 @@ where
         + BitXor<Output = T>
         + BitUtils
         + BytesInfo
-        + GenRand,
+        + GenRand
+        + Serialize,
+    D: Digest,
 {
+    pub fn verify(proof: &Proof<T, D>, circuit: &impl Circuit<T>) {}
+
+    pub fn verify_repetition() {}
+
     pub fn reconstruct(
         circuit: &impl Circuit<T>,
         circuit_output: &TwoThreeDecOutput<T>,

@@ -136,7 +136,7 @@ mod circuit_tests {
         let repetition_output = Prover::prove_repetition(&mut rng, &input, &tapes, &circuit);
 
         let reconstructed_output =
-            Verifier::reconstruct(&circuit, &repetition_output.party_outputs);
+            Verifier::<u32, Keccak256>::reconstruct(&circuit, &repetition_output.party_outputs);
         assert_eq!(output, reconstructed_output)
     }
 
