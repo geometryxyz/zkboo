@@ -10,7 +10,14 @@ use crate::{
 
 pub struct Party<T>
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     tape_offset: usize,
     pub tape: Vec<GF2Word<T>>,
@@ -19,7 +26,14 @@ where
 
 impl<T> Party<T>
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     pub fn new(share: Vec<GF2Word<T>>, tape: Vec<GF2Word<T>>) -> Self {
         let view = View::new(share);

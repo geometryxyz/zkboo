@@ -1,50 +1,60 @@
 use std::marker::PhantomData;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha3::Digest;
 
-use crate::{error::Error, config::HASH_LEN};
+use crate::{config::HASH_LEN, error::Error};
 
-pub struct Blinding<T: Serialize>(T);
+#[derive(Default, Serialize, Deserialize)]
+pub struct Blinding<T: Serialize>(pub T);
 impl<T: Serialize> AsRef<T> for Blinding<T> {
     fn as_ref(&self) -> &T {
         &self.0
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Commitment<D: Digest> {
     data: [u8; HASH_LEN],
-    _digest: PhantomData<D>
+    _digest: PhantomData<D>,
 }
 
 impl<D: Digest> Commitment<D> {
-    pub fn commit<U: Serialize, T: Serialize>(blinding: &Blinding<U>, message: &T) -> Result<Self, Error> {
+    pub fn commit<U: Serialize, T: Serialize>(
+        blinding: &Blinding<U>,
+        message: &T,
+    ) -> Result<Self, Error> {
         let digest_len = <D as Digest>::output_size();
         if HASH_LEN != digest_len {
             return Err(Error::HashLenError(HASH_LEN, digest_len));
         }
 
-        let blinding = bincode::serialize(blinding.as_ref()).map_err(|_| Error::SerializationError)?;
+        let blinding =
+            bincode::serialize(blinding.as_ref()).map_err(|_| Error::SerializationError)?;
         let message = bincode::serialize(message).map_err(|_| Error::SerializationError)?;
-    
+
         let mut hasher: D = Digest::new_with_prefix(&blinding);
         hasher.update(&message);
-    
+
         // safe to unwrap since we check digest output is of right side
         let data = hasher.finalize().to_vec().try_into().unwrap();
         Ok(Self {
             data,
             _digest: PhantomData,
         })
-    }  
+    }
 
-    pub fn verify_opening<U: Serialize, T: Serialize>(&self, blinding: &Blinding<U>, message: &T) -> Result<bool, Error> {
+    pub fn verify_opening<U: Serialize, T: Serialize>(
+        &self,
+        blinding: &Blinding<U>,
+        message: &T,
+    ) -> Result<bool, Error> {
         let digest_len = <D as Digest>::output_size();
         if HASH_LEN != digest_len {
             return Err(Error::HashLenError(HASH_LEN, digest_len));
         }
-        let blinding = bincode::serialize(blinding.as_ref()).map_err(|_| Error::SerializationError)?;
+        let blinding =
+            bincode::serialize(blinding.as_ref()).map_err(|_| Error::SerializationError)?;
         let message = bincode::serialize(message).map_err(|_| Error::SerializationError)?;
 
         let mut hasher: D = Digest::new_with_prefix(&blinding);
@@ -56,10 +66,9 @@ impl<D: Digest> Commitment<D> {
     }
 }
 
-
 #[cfg(test)]
 mod commitment_tests {
-    use sha3::{Keccak256, Keccak224};
+    use sha3::{Keccak224, Keccak256};
 
     use super::{Blinding, Commitment};
 

@@ -12,11 +12,23 @@ pub type TwoThreeDecOutput<T> = (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T
 
 pub trait Circuit<T>
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     fn compute(input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
-    fn compute_23_decomposition(&self, p1: &mut Party<T>, p2: &mut Party<T>, p3: &mut Party<T>) -> TwoThreeDecOutput<T>;
-    fn party_output_len(&self) -> usize; 
+    fn compute_23_decomposition(
+        &self,
+        p1: &mut Party<T>,
+        p2: &mut Party<T>,
+        p3: &mut Party<T>,
+    ) -> TwoThreeDecOutput<T>;
+    fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
 
@@ -28,6 +40,7 @@ mod circuit_tests {
     };
 
     use rand::{rngs::ThreadRng, thread_rng};
+    use sha3::Keccak256;
 
     use super::{Circuit, TwoThreeDecOutput};
     use crate::{
@@ -35,7 +48,8 @@ mod circuit_tests {
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
         prng::generate_tapes,
-        prover::Prover, verifier::Verifier,
+        prover::Prover,
+        verifier::Verifier,
     };
 
     // computes: (x1 ^ x2) & (x3 ^ x4) & x5
@@ -44,6 +58,7 @@ mod circuit_tests {
     impl<T> Circuit<T> for SimpleCircuit1
     where
         T: Copy
+            + Default
             + Display
             + BitAnd<Output = T>
             + BitXor<Output = T>
@@ -118,9 +133,10 @@ mod circuit_tests {
         let tapes = generate_tapes::<u32, ThreadRng>(2, 1, &mut rng);
 
         let circuit = SimpleCircuit1 {};
-        let decomposition_output = Prover::prove_repetition(&mut rng, &input, &tapes, &circuit);
+        let repetition_output = Prover::prove_repetition(&mut rng, &input, &tapes, &circuit);
 
-        let reconstructed_output = Verifier::reconstruct(&circuit, &decomposition_output);
+        let reconstructed_output =
+            Verifier::reconstruct(&circuit, &repetition_output.party_outputs);
         assert_eq!(output, reconstructed_output)
     }
 
@@ -133,6 +149,7 @@ mod circuit_tests {
         let output = SimpleCircuit1::compute(&input);
 
         let circuit = SimpleCircuit1 {};
-        Prover::prove(&mut rng, &input, &circuit, num_of_repetitions);
+        Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions)
+            .unwrap();
     }
 }

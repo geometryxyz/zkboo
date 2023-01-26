@@ -4,6 +4,7 @@ use std::{
 };
 
 use rand_core::{CryptoRng, RngCore};
+use serde::{Deserialize, Serialize};
 
 pub struct Bit(u8);
 
@@ -160,10 +161,17 @@ impl GenRand for u128 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct GF2Word<T>
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     pub value: T,
     pub size: usize,
@@ -171,7 +179,14 @@ where
 
 impl<T> From<T> for GF2Word<T>
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     fn from(value: T) -> Self {
         GF2Word::<T> {
@@ -182,7 +197,14 @@ where
 }
 impl<T> BitAnd for GF2Word<T>
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     type Output = Self;
 
@@ -196,7 +218,14 @@ where
 
 impl<T> BitXor for GF2Word<T>
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     type Output = Self;
 

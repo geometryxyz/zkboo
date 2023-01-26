@@ -1,5 +1,5 @@
 #[derive(Debug)]
 pub enum Error {
-    SerializationError, 
-    HashLenError(usize, usize)
+    SerializationError,
+    HashLenError(usize, usize),
 }

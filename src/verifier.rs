@@ -1,17 +1,43 @@
-use std::{fmt::Display, ops::{BitAnd, BitXor}, marker::PhantomData};
+use std::{
+    fmt::Display,
+    marker::PhantomData,
+    ops::{BitAnd, BitXor},
+};
 
-use crate::{gf2_word::{BitUtils, BytesInfo, GenRand, GF2Word}, circuit::{TwoThreeDecOutput, Circuit}};
+use crate::{
+    circuit::{Circuit, TwoThreeDecOutput},
+    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+};
 
 pub struct Verifier<T>
-    where T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+where
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
-    _t: PhantomData<T>
+    _t: PhantomData<T>,
 }
 
-impl<T> Verifier<T>  
-    where T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+impl<T> Verifier<T>
+where
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
-    pub fn reconstruct(circuit: &impl Circuit<T>, circuit_output: &TwoThreeDecOutput<T>) -> Vec<GF2Word<T>> {
+    pub fn reconstruct(
+        circuit: &impl Circuit<T>,
+        circuit_output: &TwoThreeDecOutput<T>,
+    ) -> Vec<GF2Word<T>> {
         let party_output_len = circuit.party_output_len();
         let (o1, o2, o3) = circuit_output;
         // TODO: introduce error here

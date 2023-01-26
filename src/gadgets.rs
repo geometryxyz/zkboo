@@ -14,7 +14,14 @@ pub fn mpc_xor<T>(
     input_p3: (GF2Word<T>, GF2Word<T>),
 ) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     let output_p1 = input_p1.0 ^ input_p1.1;
     let output_p2 = input_p2.0 ^ input_p2.1;
@@ -32,7 +39,14 @@ pub fn mpc_and<T>(
     p3: &mut Party<T>,
 ) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
 where
-    T: Copy + Display + BitAnd<Output = T> + BitXor<Output = T> + BitUtils + BytesInfo + GenRand,
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     let r1 = p1.read_tape();
     let r2 = p2.read_tape();

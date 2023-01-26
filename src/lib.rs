@@ -1,12 +1,13 @@
 pub mod circuit;
+pub mod commitment;
+pub mod config;
+pub mod data_structures;
+pub mod error;
 pub mod fs;
 pub mod gadgets;
 pub mod gf2_word;
 pub mod party;
 pub mod prng;
 pub mod prover;
-pub mod view;
-pub mod commitment;
-pub mod error;
-pub mod config;
 pub mod verifier;
+pub mod view;
