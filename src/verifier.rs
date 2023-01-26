@@ -13,7 +13,8 @@ use crate::{
     data_structures::{Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand}, party::Party,
+    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    party::Party,
 };
 
 pub struct Verifier<T, D>
@@ -110,7 +111,7 @@ where
         let o2 = &proof.outputs[3 * repetition + 1];
         let o3 = &proof.outputs[3 * repetition + 2];
         if *output != Self::reconstruct(circuit, (o1, o2, o3)) {
-            return Err(Error::OutputReconstructionError)
+            return Err(Error::OutputReconstructionError);
         }
 
         // verify actual circuit

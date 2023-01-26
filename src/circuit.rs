@@ -199,7 +199,7 @@ mod circuit_tests {
         let proof =
             Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions)
                 .unwrap();
-                
+
         Verifier::verify(&proof, &circuit, num_of_repetitions, &output).unwrap();
     }
 }
