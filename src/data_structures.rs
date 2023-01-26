@@ -3,14 +3,56 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
+use rand::{RngCore, CryptoRng};
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 
 use crate::{
     commitment::{Blinding, Commitment},
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    view::View,
+    view::View, error::Error,
 };
+
+// pairs of (tape, view)
+#[derive(Serialize)]
+pub struct PartyExecution<'a, T>
+where
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
+{
+    pub tape: &'a [GF2Word<T>],
+    pub view: &'a View<T>,
+}
+
+impl<'a, T> PartyExecution<'a, T>
+where
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand
+        + Serialize,
+{
+    pub fn commit<R: RngCore + CryptoRng, D: Digest>(
+        &self,
+        rng: &mut R,
+    ) -> Result<(Blinding<u64>, Commitment<D>), Error> {
+        let blinding = Blinding(rng.next_u64());
+
+        let commitment = Commitment::<D>::commit(&blinding, &self)?;
+        Ok((blinding, commitment))
+    }
+}
+
 
 #[derive(Serialize)]
 pub struct PublicInput<'a, T>

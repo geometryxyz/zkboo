@@ -149,7 +149,9 @@ mod circuit_tests {
         let _ = SimpleCircuit1::compute(&input);
 
         let circuit = SimpleCircuit1 {};
-        Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions)
+        let proof = Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions)
             .unwrap();
+
+        Verifier::verify(&proof, &circuit, num_of_repetitions).unwrap();
     }
 }

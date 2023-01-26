@@ -9,8 +9,8 @@ use std::{
 
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
-    commitment::{Blinding, Commitment},
-    data_structures::{Proof, PublicInput},
+    commitment::{Commitment},
+    data_structures::{Proof, PublicInput, PartyExecution},
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
@@ -18,46 +18,6 @@ use crate::{
     prng::generate_tapes,
     view::View,
 };
-
-// pairs of (tape, view)
-#[derive(Serialize)]
-pub struct PartyExecution<'a, T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
-    tape: &'a [GF2Word<T>],
-    view: &'a View<T>,
-}
-
-impl<'a, T> PartyExecution<'a, T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand
-        + Serialize,
-{
-    pub fn commit<R: RngCore + CryptoRng, D: Digest>(
-        &self,
-        rng: &mut R,
-    ) -> Result<(Blinding<u64>, Commitment<D>), Error> {
-        let blinding = Blinding(rng.next_u64());
-
-        let commitment = Commitment::<D>::commit(&blinding, &self)?;
-        Ok((blinding, commitment))
-    }
-}
 
 pub struct RepetitionOutput<T>
 where
