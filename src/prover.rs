@@ -110,6 +110,7 @@ where
         input: &Vec<GF2Word<T>>,
         circuit: &impl Circuit<T>,
         num_of_repetitions: usize,
+        public_output: &Vec<GF2Word<T>>
     ) -> Result<Proof<T, D>, Error> {
         let num_of_mul_gates = circuit.num_of_mul_gates();
 
@@ -176,7 +177,7 @@ where
             }
         }
 
-        let pi = PublicInput { outputs: &outputs };
+        let pi = PublicInput { outputs: &outputs, public_output };
 
         // TODO: remove hardcoded seed
         let mut fs_oracle = SigmaFS::<D>::initialize(&[0u8]);

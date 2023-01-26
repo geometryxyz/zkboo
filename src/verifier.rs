@@ -51,10 +51,11 @@ where
         proof: &Proof<T, D>,
         circuit: &impl Circuit<T>,
         num_of_repetitions: usize,
-        output: &Vec<GF2Word<T>>,
+        public_output: &Vec<GF2Word<T>>,
     ) -> Result<(), Error> {
         let pi = PublicInput {
             outputs: &proof.outputs,
+            public_output
         };
 
         // TODO: remove hardcoded seed
@@ -65,7 +66,7 @@ where
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
 
         for (repetition, &party_index) in opening_indices.iter().enumerate() {
-            Self::verify_repetition(repetition, party_index, proof, circuit, output)?;
+            Self::verify_repetition(repetition, party_index, proof, circuit, public_output)?;
         }
 
         Ok(())

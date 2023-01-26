@@ -67,6 +67,7 @@ where
         + GenRand
         + Serialize,
 {
+    pub public_output: &'a Vec<GF2Word<T>>,
     pub outputs: &'a Vec<Vec<GF2Word<T>>>,
 }
 
