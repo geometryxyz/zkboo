@@ -14,7 +14,7 @@ use crate::{
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    party::Party,
+    party::Party, num_of_repetitions_given_desired_security,
 };
 
 pub struct Verifier<T, D>
@@ -50,9 +50,11 @@ where
     pub fn verify(
         proof: &Proof<T, D>,
         circuit: &impl Circuit<T>,
-        num_of_repetitions: usize,
+        security_param: usize,
         public_output: &Vec<GF2Word<T>>,
     ) -> Result<(), Error> {
+        let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
+
         let pi = PublicInput {
             outputs: &proof.outputs,
             public_output

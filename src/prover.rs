@@ -16,7 +16,7 @@ use crate::{
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     party::Party,
     prng::generate_tapes,
-    view::View,
+    view::View, num_of_repetitions_given_desired_security,
 };
 
 pub struct RepetitionOutput<T>
@@ -109,9 +109,10 @@ where
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
         circuit: &impl Circuit<T>,
-        num_of_repetitions: usize,
+        security_param: usize,
         public_output: &Vec<GF2Word<T>>
     ) -> Result<Proof<T, D>, Error> {
+        let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
         let num_of_mul_gates = circuit.num_of_mul_gates();
 
         // TODO: consider nicer tapes handling

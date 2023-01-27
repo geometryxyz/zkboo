@@ -190,16 +190,16 @@ mod circuit_tests {
     #[test]
     fn test_full_run() {
         let mut rng = thread_rng();
-        let num_of_repetitions = 20;
+        let security_param = 40;
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
         let output = SimpleCircuit1::compute(&input);
 
         let circuit = SimpleCircuit1 {};
         let proof =
-            Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, num_of_repetitions, &output)
+            Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, security_param, &output)
                 .unwrap();
 
-        Verifier::verify(&proof, &circuit, num_of_repetitions, &output).unwrap();
+        Verifier::verify(&proof, &circuit, security_param, &output).unwrap();
     }
 }
