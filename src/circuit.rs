@@ -42,6 +42,7 @@ mod circuit_tests {
     };
 
     use rand::{rngs::ThreadRng, thread_rng};
+    use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
 
     use super::{Circuit, TwoThreeDecOutput};
@@ -196,9 +197,14 @@ mod circuit_tests {
         let output = SimpleCircuit1::compute(&input);
 
         let circuit = SimpleCircuit1 {};
-        let proof =
-            Prover::prove::<ThreadRng, Keccak256>(&mut rng, &input, &circuit, security_param, &output)
-                .unwrap();
+        let proof = Prover::prove::<ThreadRng, ChaCha20Rng,Keccak256>(
+            &mut rng,
+            &input,
+            &circuit,
+            security_param,
+            &output,
+        )
+        .unwrap();
 
         Verifier::verify(&proof, &circuit, security_param, &output).unwrap();
     }

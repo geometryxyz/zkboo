@@ -25,12 +25,12 @@ mod test_rep {
 
     #[test]
     fn test_constants_from_zkboo_paper() {
-        let sigma_1 = 40; 
+        let sigma_1 = 40;
         let sigma_2 = 80;
-        let n_1 = num_of_repetitions_given_desired_security(sigma_1); 
+        let n_1 = num_of_repetitions_given_desired_security(sigma_1);
         assert_eq!(n_1, 69);
 
-        let n_2 = num_of_repetitions_given_desired_security(sigma_2); 
+        let n_2 = num_of_repetitions_given_desired_security(sigma_2);
         assert_eq!(n_2, 137);
     }
 }

@@ -9,12 +9,14 @@ use sha3::{digest::FixedOutputReset, Digest};
 
 use crate::{
     circuit::Circuit,
+    config::HASH_LEN,
     data_structures::PartyExecution,
     data_structures::{Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    party::Party, num_of_repetitions_given_desired_security,
+    num_of_repetitions_given_desired_security,
+    party::Party,
 };
 
 pub struct Verifier<T, D>
@@ -57,7 +59,9 @@ where
 
         let pi = PublicInput {
             outputs: &proof.outputs,
-            public_output
+            public_output,
+            hash_len: HASH_LEN,
+            security_param,
         };
 
         // TODO: remove hardcoded seed

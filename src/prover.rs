@@ -1,3 +1,4 @@
+use rand::SeedableRng;
 use rand_core::{CryptoRng, RngCore};
 use serde::Serialize;
 use sha3::{digest::FixedOutputReset, Digest};
@@ -10,13 +11,15 @@ use std::{
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
     commitment::Commitment,
+    config::HASH_LEN,
     data_structures::{PartyExecution, Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    num_of_repetitions_given_desired_security,
     party::Party,
-    prng::generate_tapes,
-    view::View, num_of_repetitions_given_desired_security,
+    prng::{generate_tapes, KeyManager, generate_tapes_from_keys, Key},
+    view::View,
 };
 
 pub struct RepetitionOutput<T>
@@ -105,15 +108,17 @@ where
         }
     }
 
-    pub fn prove<R: RngCore + CryptoRng, D: Digest + FixedOutputReset>(
+    pub fn prove<R: RngCore + CryptoRng, TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng, D: Digest + FixedOutputReset>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
         circuit: &impl Circuit<T>,
         security_param: usize,
-        public_output: &Vec<GF2Word<T>>
+        public_output: &Vec<GF2Word<T>>,
     ) -> Result<Proof<T, D>, Error> {
         let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
         let num_of_mul_gates = circuit.num_of_mul_gates();
+
+        let mut key_manager = KeyManager::new(num_of_repetitions, rng);
 
         // TODO: consider nicer tapes handling
         let tapes = generate_tapes::<T, R>(num_of_mul_gates, num_of_repetitions, rng);
@@ -144,6 +149,12 @@ where
                 tapes_1[i].to_vec(),
                 tapes_2[i].to_vec(),
             ];
+
+            let k1 = key_manager.request_key();
+            let k2 = key_manager.request_key();
+            let k3 = key_manager.request_key();
+            let (t1, t2, t3) = generate_tapes_from_keys::<T, TapeR>(num_of_mul_gates, k1, k2, k3);
+
             let repetition_output = Self::prove_repetition(rng, input, &tapes, circuit);
 
             // record all outputs
@@ -178,7 +189,12 @@ where
             }
         }
 
-        let pi = PublicInput { outputs: &outputs, public_output };
+        let pi = PublicInput {
+            outputs: &outputs,
+            public_output,
+            hash_len: HASH_LEN,
+            security_param,
+        };
 
         // TODO: remove hardcoded seed
         let mut fs_oracle = SigmaFS::<D>::initialize(&[0u8]);
