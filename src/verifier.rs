@@ -4,6 +4,7 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
+use rand::{SeedableRng, RngCore, CryptoRng};
 use serde::Serialize;
 use sha3::{digest::FixedOutputReset, Digest};
 
@@ -16,10 +17,10 @@ use crate::{
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     num_of_repetitions_given_desired_security,
-    party::Party,
+    party::Party, prng::{generate_tape_from_key, Key},
 };
 
-pub struct Verifier<T, D>
+pub struct Verifier<T, TapeR, D>
 where
     T: Copy
         + Default
@@ -30,12 +31,14 @@ where
         + BytesInfo
         + GenRand,
     D: Digest + FixedOutputReset,
+    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng
 {
     _t: PhantomData<T>,
+    _tr: PhantomData<TapeR>,
     _d: PhantomData<D>,
 }
 
-impl<T, D> Verifier<T, D>
+impl<T, TapeR, D> Verifier<T, TapeR, D>
 where
     T: Copy
         + Default
@@ -47,7 +50,8 @@ where
         + GenRand
         + PartialEq
         + Serialize,
-    D: Digest + FixedOutputReset,
+    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
+    D: Digest + FixedOutputReset
 {
     pub fn verify(
         proof: &Proof<T, D>,
@@ -90,28 +94,30 @@ where
         let i1 = repetition * 3 + ((party_index + 1) % 3);
 
         // check party i
-        let tape_i = &proof.tapes[2 * repetition];
-        let view_i = &proof.views[2 * repetition];
-        let pi_execution = PartyExecution {
-            view: view_i,
-            tape: &tape_i,
+        let k_i0 = proof.keys[2 * repetition];
+        let tape_i0 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i0);
+        let view_i0 = &proof.views[2 * repetition];
+        let pi0_execution = PartyExecution {
+            key: &k_i0,
+            view: view_i0,
         };
-        let blinding_i = &proof.blinders[2 * repetition];
+        let blinding_i0 = &proof.blinders[2 * repetition];
 
-        let cm_i = &proof.commitments[i0];
-        cm_i.verify_opening(blinding_i, &pi_execution).unwrap();
+        let cm_i0 = &proof.commitments[i0];
+        cm_i0.verify_opening(blinding_i0, &pi0_execution)?;
 
         // check party i + 1
-        let tape_i1 = &proof.tapes[2 * repetition + 1];
+        let k_i1 = proof.keys[2 * repetition + 1];
+        let tape_i1 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i1);
         let view_i1 = &proof.views[2 * repetition + 1];
         let pi1_execution = PartyExecution {
+            key: &k_i1,
             view: view_i1,
-            tape: &tape_i1,
         };
         let blinding_i1 = &proof.blinders[2 * repetition + 1];
 
         let cm_i1 = &proof.commitments[i1];
-        cm_i1.verify_opening(blinding_i1, &pi1_execution).unwrap();
+        cm_i1.verify_opening(blinding_i1, &pi1_execution)?;
 
         // reconstruct outputs
         let o1 = &proof.outputs[3 * repetition];
@@ -122,8 +128,8 @@ where
         }
 
         // verify actual circuit
-        let mut p = Party::from_tape_and_view(view_i.clone(), tape_i.clone());
-        let mut p_next = Party::from_tape_and_view(view_i1.clone(), tape_i1.clone());
+        let mut p = Party::from_tape_and_view(view_i0.clone(), tape_i0);
+        let mut p_next = Party::from_tape_and_view(view_i1.clone(), tape_i1);
 
         circuit.simulate_two_parties(&mut p, &mut p_next)?;
 

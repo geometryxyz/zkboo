@@ -11,7 +11,7 @@ use crate::{
     commitment::{Blinding, Commitment},
     error::Error,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    view::View,
+    view::View, prng::Key,
 };
 
 // pairs of (tape, view)
@@ -27,7 +27,7 @@ where
         + BytesInfo
         + GenRand,
 {
-    pub tape: &'a [GF2Word<T>],
+    pub key: &'a Key,
     pub view: &'a View<T>,
 }
 
@@ -91,6 +91,6 @@ where
     pub outputs: Vec<Vec<GF2Word<T>>>,
     pub commitments: Vec<Commitment<D>>,
     pub views: Vec<View<T>>,
-    pub tapes: Vec<Vec<GF2Word<T>>>,
+    pub keys: Vec<Key>,
     pub blinders: Vec<Blinding<u64>>,
 }

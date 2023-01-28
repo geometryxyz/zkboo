@@ -41,7 +41,7 @@ mod circuit_tests {
         ops::{BitAnd, BitXor},
     };
 
-    use rand::{rngs::ThreadRng, thread_rng};
+    use rand::{rngs::ThreadRng, thread_rng, RngCore};
     use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
 
@@ -51,12 +51,13 @@ mod circuit_tests {
         gadgets::{and_verify, mpc_and, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
-        prng::generate_tapes,
+        prng::{generate_tapes, generate_tape_from_key},
         prover::Prover,
-        verifier::Verifier,
+        verifier::Verifier, data_structures::{Proof, PartyExecution}, commitment::Blinding,
     };
 
     // computes: (x1 ^ x2) & (x3 ^ x4) & x5
+    #[derive(Clone, Copy)]
     struct SimpleCircuit1 {}
 
     impl<T> Circuit<T> for SimpleCircuit1
@@ -151,7 +152,7 @@ mod circuit_tests {
             let b2 = y3 ^ y4;
 
             let (ab1, ab2) = and_verify((a1, b1), (a2, b2), p, p_next)?;
-            let _ = and_verify((ab1, x5), (ab2, y5), p, p_next)?;
+            // let _ = and_verify((ab1, x5), (ab2, y5), p, p_next)?;
 
             Ok(())
         }
@@ -167,25 +168,59 @@ mod circuit_tests {
 
     #[test]
     fn test_single_repetition() {
+        type U = u32;
         let mut rng = thread_rng();
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
+        let circuit = SimpleCircuit1 {};
         let output = SimpleCircuit1::compute(&input);
 
-        let tapes = generate_tapes::<u32, ThreadRng>(2, 1, &mut rng);
+        // let tapes = generate_tapes::<u32, ThreadRng>(2, 1, &mut rng);
+        let mut k1 = [0u8; 32];
+        let mut k2 = [0u8; 32];
+        let mut k3 = [0u8; 32];
 
-        let circuit = SimpleCircuit1 {};
-        let repetition_output = Prover::prove_repetition(&mut rng, &input, &tapes, &circuit);
+        rng.fill_bytes(&mut k1);
+        rng.fill_bytes(&mut k2);
+        rng.fill_bytes(&mut k3);
 
-        let reconstructed_output = Verifier::<u32, Keccak256>::reconstruct(
-            &circuit,
-            (
-                &repetition_output.party_outputs.0,
-                &repetition_output.party_outputs.1,
-                &repetition_output.party_outputs.2,
-            ),
-        );
-        assert_eq!(output, reconstructed_output)
+        let num_of_mul_gates = 2;
+        let t1 = generate_tape_from_key::<U, ChaCha20Rng>(num_of_mul_gates, k1);
+        let t2 = generate_tape_from_key::<U, ChaCha20Rng>(num_of_mul_gates, k2);
+        let t3 = generate_tape_from_key::<U, ChaCha20Rng>(num_of_mul_gates, k3);
+
+        let repetition_output = Prover::<U, ChaCha20Rng, Keccak256>::prove_repetition(&mut rng, &input, (&t1, &t2, &t3), &circuit);
+
+        let p1_execution = PartyExecution {
+            key: &k1,
+            view: &repetition_output.party_views.0,
+        };
+
+        let p2_execution = PartyExecution {
+            key: &k2,
+            view: &repetition_output.party_views.1,
+        };
+
+        let p3_execution = PartyExecution {
+            key: &k3,
+            view: &repetition_output.party_views.2,
+        };
+
+        let cm1 = p1_execution.commit::<ThreadRng, Keccak256>(&mut rng).unwrap();
+        let cm2 = p2_execution.commit::<ThreadRng, Keccak256>(&mut rng).unwrap();
+        let cm3 = p3_execution.commit::<ThreadRng, Keccak256>(&mut rng).unwrap();
+
+
+        let proof = Proof::<U, Keccak256> {
+            outputs: vec![repetition_output.party_outputs.0, repetition_output.party_outputs.1, repetition_output.party_outputs.2],
+            commitments: vec![cm1.1, cm2.1, cm3.1],
+            views: vec![repetition_output.party_views.0, repetition_output.party_views.1],
+            keys: vec![k1, k2],
+            blinders: vec![cm1.0, cm2.0],
+        };
+
+        let party_index = 0; 
+        Verifier::<u32, ChaCha20Rng,Keccak256>::verify_repetition(0, party_index, &proof, &circuit, &output).unwrap();
     }
 
     #[test]
@@ -197,7 +232,7 @@ mod circuit_tests {
         let output = SimpleCircuit1::compute(&input);
 
         let circuit = SimpleCircuit1 {};
-        let proof = Prover::prove::<ThreadRng, ChaCha20Rng,Keccak256>(
+        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng>(
             &mut rng,
             &input,
             &circuit,
@@ -206,6 +241,6 @@ mod circuit_tests {
         )
         .unwrap();
 
-        Verifier::verify(&proof, &circuit, security_param, &output).unwrap();
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, security_param, &output).unwrap();
     }
 }

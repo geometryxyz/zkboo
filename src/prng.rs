@@ -66,6 +66,10 @@ where
         self.offset += 1; 
         self.keys_bytes[offset * KEY_LEN..(offset + 1) * KEY_LEN].try_into().unwrap()
     }
+
+    pub fn request_key_i(&self, pos: usize) -> Key {
+        self.keys_bytes[pos * KEY_LEN..(pos + 1) * KEY_LEN].try_into().unwrap()
+    }
 }
 
 /// function that just generates all the tapes up-front, faster then computing rng many times from PRNG
@@ -101,6 +105,31 @@ where
     }
 
     (tape_p1, tape_p2, tape_p3)
+}
+
+pub fn generate_tape_from_key<T, R>(
+    num_of_mul_gates: usize,
+    k: R::Seed
+) -> Vec<GF2Word<T>>
+where
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
+    R: SeedableRng + RngCore + CryptoRng,
+{
+    let mut rng_1 = R::from_seed(k);
+    let mut tape = Vec::with_capacity(num_of_mul_gates);
+
+    for _ in 0..num_of_mul_gates {
+        tape.push(T::gen_rand(&mut rng_1).into());
+    }
+
+    tape
 }
 
 #[cfg(test)]
