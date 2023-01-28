@@ -18,8 +18,7 @@ use crate::{
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     num_of_repetitions_given_desired_security,
     party::Party,
-    prng::{KeyManager, generate_tapes_from_keys, Key, generate_tape_from_key},
-    view::View,
+    view::View, key::{Key, KeyManager},
 };
 
 pub struct RepetitionOutput<T>
@@ -89,13 +88,14 @@ where
     pub fn init_parties<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
-        tapes: (&Vec<GF2Word<T>>, &Vec<GF2Word<T>>, &Vec<GF2Word<T>>),
+        keys: (Key, Key, Key),
+        tape_len: usize,
     ) -> (Party<T>, Party<T>, Party<T>) {
         let (share_1, share_2, share_3) = Self::share(rng, input);
 
-        let p1 = Party::new(share_1, tapes.0.clone());
-        let p2 = Party::new(share_2, tapes.1.clone());
-        let p3 = Party::new(share_3, tapes.2.clone());
+        let p1 = Party::new::<TapeR>(share_1, keys.0, tape_len);
+        let p2 = Party::new::<TapeR>(share_2, keys.1, tape_len);
+        let p3 = Party::new::<TapeR>(share_3, keys.2, tape_len);
 
         (p1, p2, p3)
     }
@@ -103,10 +103,10 @@ where
     pub fn prove_repetition<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
-        tapes: (&Vec<GF2Word<T>>, &Vec<GF2Word<T>>, &Vec<GF2Word<T>>),
+        keys: (Key, Key, Key),
         circuit: &impl Circuit<T>,
     ) -> RepetitionOutput<T> {
-        let (mut p1, mut p2, mut p3) = Self::init_parties(rng, input, tapes);
+        let (mut p1, mut p2, mut p3) = Self::init_parties(rng, input, keys, circuit.num_of_mul_gates());
         let party_outputs = circuit.compute_23_decomposition(&mut p1, &mut p2, &mut p3);
         RepetitionOutput {
             party_outputs,
@@ -122,7 +122,6 @@ where
         public_output: &Vec<GF2Word<T>>,
     ) -> Result<Proof<T, D>, Error> {
         let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
-        let num_of_mul_gates = circuit.num_of_mul_gates();
 
         let mut key_manager = KeyManager::new(num_of_repetitions, rng);
 
@@ -135,11 +134,8 @@ where
             let k1 = key_manager.request_key();
             let k2 = key_manager.request_key();
             let k3 = key_manager.request_key();
-            let t1 = generate_tape_from_key::<T, TapeR>(num_of_mul_gates, k1);
-            let t2 = generate_tape_from_key::<T, TapeR>(num_of_mul_gates, k2);
-            let t3 = generate_tape_from_key::<T, TapeR>(num_of_mul_gates, k3);
 
-            let repetition_output = Self::prove_repetition(rng, input, (&t1, &t2, &t3), circuit);
+            let repetition_output = Self::prove_repetition(rng, input, (k1, k2, k3), circuit);
 
             // record all outputs
             outputs.push(repetition_output.party_outputs.0);

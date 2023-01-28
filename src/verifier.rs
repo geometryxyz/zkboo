@@ -17,7 +17,7 @@ use crate::{
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     num_of_repetitions_given_desired_security,
-    party::Party, prng::{generate_tape_from_key, Key},
+    party::Party, tape::Tape, key::Key,
 };
 
 pub struct Verifier<T, TapeR, D>
@@ -95,7 +95,8 @@ where
 
         // check party i
         let k_i0 = proof.keys[2 * repetition];
-        let tape_i0 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i0);
+        // let tape_i0 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i0);
+        let tape_i0 = Tape::from_key::<TapeR>(k_i0, circuit.num_of_mul_gates());
         let view_i0 = &proof.views[2 * repetition];
         let pi0_execution = PartyExecution {
             key: &k_i0,
@@ -108,7 +109,8 @@ where
 
         // check party i + 1
         let k_i1 = proof.keys[2 * repetition + 1];
-        let tape_i1 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i1);
+        // let tape_i1 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i1);
+        let tape_i1 = Tape::from_key::<TapeR>(k_i1, circuit.num_of_mul_gates());
         let view_i1 = &proof.views[2 * repetition + 1];
         let pi1_execution = PartyExecution {
             key: &k_i1,

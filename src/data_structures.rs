@@ -11,7 +11,7 @@ use crate::{
     commitment::{Blinding, Commitment},
     error::Error,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    view::View, prng::Key,
+    view::View, key::Key,
 };
 
 // pairs of (tape, view)

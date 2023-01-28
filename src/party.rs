@@ -3,9 +3,11 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
+use rand::{SeedableRng, RngCore, CryptoRng};
+
 use crate::{
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
-    view::View,
+    view::View, tape::Tape, key::Key,
 };
 
 pub struct Party<T>
@@ -19,9 +21,8 @@ where
         + BytesInfo
         + GenRand,
 {
-    tape_offset: usize,
-    pub tape: Vec<GF2Word<T>>,
-    pub view: View<T>,
+    pub tape: Tape<T>,
+    pub view: View<T>
 }
 
 impl<T> Party<T>
@@ -35,21 +36,20 @@ where
         + BytesInfo
         + GenRand,
 {
-    pub fn new(share: Vec<GF2Word<T>>, tape: Vec<GF2Word<T>>) -> Self {
+    pub fn new<TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng>(share: Vec<GF2Word<T>>, k: Key, tape_len: usize) -> Self {
+        let tape = Tape::<T>::from_key::<TapeR>(k, tape_len);
         let view = View::new(share);
 
         Self {
             view,
             tape,
-            tape_offset: 0,
         }
     }
 
-    pub fn from_tape_and_view(view: View<T>, tape: Vec<GF2Word<T>>) -> Self {
+    pub fn from_tape_and_view(view: View<T>, tape: Tape<T>) -> Self {
         Self {
             tape,
             view,
-            tape_offset: 0,
         }
     }
 
@@ -57,9 +57,7 @@ where
         This function as agnostic to tape approach (full tape computed or PRNG )
     */
     pub fn read_tape(&mut self) -> GF2Word<T> {
-        let ri = self.tape[self.tape_offset];
-        self.tape_offset += 1;
-        ri
+        self.tape.read_next()
     }
 
     pub fn read_view(&mut self) -> GF2Word<T> {
