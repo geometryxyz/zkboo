@@ -14,7 +14,6 @@ use crate::{
     view::View, key::Key,
 };
 
-// pairs of (tape, view)
 #[derive(Serialize)]
 pub struct PartyExecution<'a, T>
 where
