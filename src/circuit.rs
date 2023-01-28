@@ -47,12 +47,13 @@ mod circuit_tests {
 
     use super::{Circuit, TwoThreeDecOutput};
     use crate::{
+        data_structures::{PartyExecution, Proof},
         error::Error,
         gadgets::{and_verify, mpc_and, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
         prover::Prover,
-        verifier::Verifier, data_structures::{Proof, PartyExecution},
+        verifier::Verifier,
     };
 
     // computes: (x1 ^ x2) & (x3 ^ x4) & x5
@@ -182,7 +183,12 @@ mod circuit_tests {
         rng.fill_bytes(&mut k2);
         rng.fill_bytes(&mut k3);
 
-        let repetition_output = Prover::<U, ChaCha20Rng, Keccak256>::prove_repetition(&mut rng, &input, (k1, k2, k3), &circuit);
+        let repetition_output = Prover::<U, ChaCha20Rng, Keccak256>::prove_repetition(
+            &mut rng,
+            &input,
+            (k1, k2, k3),
+            &circuit,
+        );
 
         let p1_execution = PartyExecution {
             key: &k1,
@@ -199,21 +205,40 @@ mod circuit_tests {
             view: &repetition_output.party_views.2,
         };
 
-        let cm1 = p1_execution.commit::<ThreadRng, Keccak256>(&mut rng).unwrap();
-        let cm2 = p2_execution.commit::<ThreadRng, Keccak256>(&mut rng).unwrap();
-        let cm3 = p3_execution.commit::<ThreadRng, Keccak256>(&mut rng).unwrap();
-
+        let cm1 = p1_execution
+            .commit::<ThreadRng, Keccak256>(&mut rng)
+            .unwrap();
+        let cm2 = p2_execution
+            .commit::<ThreadRng, Keccak256>(&mut rng)
+            .unwrap();
+        let cm3 = p3_execution
+            .commit::<ThreadRng, Keccak256>(&mut rng)
+            .unwrap();
 
         let proof = Proof::<U, Keccak256> {
-            outputs: vec![repetition_output.party_outputs.0, repetition_output.party_outputs.1, repetition_output.party_outputs.2],
+            outputs: vec![
+                repetition_output.party_outputs.0,
+                repetition_output.party_outputs.1,
+                repetition_output.party_outputs.2,
+            ],
             commitments: vec![cm1.1, cm2.1, cm3.1],
-            views: vec![repetition_output.party_views.0, repetition_output.party_views.1],
+            views: vec![
+                repetition_output.party_views.0,
+                repetition_output.party_views.1,
+            ],
             keys: vec![k1, k2],
             blinders: vec![cm1.0, cm2.0],
         };
 
-        let party_index = 0; 
-        Verifier::<u32, ChaCha20Rng,Keccak256>::verify_repetition(0, party_index, &proof, &circuit, &output).unwrap();
+        let party_index = 0;
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify_repetition(
+            0,
+            party_index,
+            &proof,
+            &circuit,
+            &output,
+        )
+        .unwrap();
     }
 
     #[test]
@@ -234,6 +259,7 @@ mod circuit_tests {
         )
         .unwrap();
 
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, security_param, &output).unwrap();
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, security_param, &output)
+            .unwrap();
     }
 }

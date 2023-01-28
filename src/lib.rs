@@ -7,9 +7,9 @@ pub mod fs;
 pub mod gadgets;
 pub mod gf2_word;
 pub mod key;
-pub mod tape;
 pub mod party;
 pub mod prover;
+pub mod tape;
 pub mod verifier;
 pub mod view;
 

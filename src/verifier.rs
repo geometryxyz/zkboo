@@ -4,7 +4,7 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
-use rand::{SeedableRng, RngCore, CryptoRng};
+use rand::{CryptoRng, RngCore, SeedableRng};
 use serde::Serialize;
 use sha3::{digest::FixedOutputReset, Digest};
 
@@ -16,8 +16,10 @@ use crate::{
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    key::Key,
     num_of_repetitions_given_desired_security,
-    party::Party, tape::Tape, key::Key,
+    party::Party,
+    tape::Tape,
 };
 
 pub struct Verifier<T, TapeR, D>
@@ -31,7 +33,7 @@ where
         + BytesInfo
         + GenRand,
     D: Digest + FixedOutputReset,
-    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng
+    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
 {
     _t: PhantomData<T>,
     _tr: PhantomData<TapeR>,
@@ -51,7 +53,7 @@ where
         + PartialEq
         + Serialize,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Digest + FixedOutputReset
+    D: Digest + FixedOutputReset,
 {
     pub fn verify(
         proof: &Proof<T, D>,
@@ -95,7 +97,6 @@ where
 
         // check party i
         let k_i0 = proof.keys[2 * repetition];
-        // let tape_i0 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i0);
         let tape_i0 = Tape::from_key::<TapeR>(k_i0, circuit.num_of_mul_gates());
         let view_i0 = &proof.views[2 * repetition];
         let pi0_execution = PartyExecution {
@@ -109,7 +110,6 @@ where
 
         // check party i + 1
         let k_i1 = proof.keys[2 * repetition + 1];
-        // let tape_i1 = generate_tape_from_key::<T, TapeR>(circuit.num_of_mul_gates(), k_i1);
         let tape_i1 = Tape::from_key::<TapeR>(k_i1, circuit.num_of_mul_gates());
         let view_i1 = &proof.views[2 * repetition + 1];
         let pi1_execution = PartyExecution {

@@ -16,9 +16,10 @@ use crate::{
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    key::{Key, KeyManager},
     num_of_repetitions_given_desired_security,
     party::Party,
-    view::View, key::{Key, KeyManager},
+    view::View,
 };
 
 pub struct RepetitionOutput<T>
@@ -46,12 +47,12 @@ where
         + BitUtils
         + BytesInfo
         + GenRand,
-    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng, 
-    D: Digest + FixedOutputReset
+    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
+    D: Digest + FixedOutputReset,
 {
     _word: PhantomData<T>,
-    _tr: PhantomData<TapeR>, 
-    _d: PhantomData<D>
+    _tr: PhantomData<TapeR>,
+    _d: PhantomData<D>,
 }
 
 impl<T, TapeR, D> Prover<T, TapeR, D>
@@ -65,8 +66,8 @@ where
         + BytesInfo
         + GenRand
         + Serialize,
-    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng, 
-    D: Digest + FixedOutputReset
+    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
+    D: Digest + FixedOutputReset,
 {
     pub fn share<R: RngCore + CryptoRng>(
         rng: &mut R,
@@ -106,7 +107,8 @@ where
         keys: (Key, Key, Key),
         circuit: &impl Circuit<T>,
     ) -> RepetitionOutput<T> {
-        let (mut p1, mut p2, mut p3) = Self::init_parties(rng, input, keys, circuit.num_of_mul_gates());
+        let (mut p1, mut p2, mut p3) =
+            Self::init_parties(rng, input, keys, circuit.num_of_mul_gates());
         let party_outputs = circuit.compute_23_decomposition(&mut p1, &mut p2, &mut p3);
         RepetitionOutput {
             party_outputs,

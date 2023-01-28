@@ -158,21 +158,4 @@ mod test_fs {
             assert!(trit == 0 || trit == 1 || trit == 2);
         }
     }
-
-    // #[test]
-    // fn test_stateful() {
-    //     let seed = b"hello fs 1313e1";
-    //     let public_data = b"this is public";
-    //     let prover_msg = b"this from prover";
-    //     let r = 137usize;
-
-    //     let mut fs = SigmaFS::<Keccak256>::initialize(seed);
-    //     fs.digest_public_data(public_data);
-    //     fs.digest_prover_message(prover_msg);
-
-    //     let trits = fs.sample_trits(r);
-    //     for trit in trits {
-    //         assert!(trit == 0 || trit == 1 || trit == 2);
-    //     }
-    // }
 }

@@ -1,10 +1,16 @@
-use std::{fmt::Display, ops::{BitAnd, BitXor}};
+use std::{
+    fmt::Display,
+    ops::{BitAnd, BitXor},
+};
 
-use rand::{SeedableRng, RngCore, CryptoRng};
+use rand::{CryptoRng, RngCore, SeedableRng};
 
-use crate::{gf2_word::{GF2Word, BitUtils, BytesInfo, GenRand}, key::Key};
+use crate::{
+    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    key::Key,
+};
 
-pub struct Tape<T> 
+pub struct Tape<T>
 where
     T: Copy
         + Default
@@ -16,10 +22,10 @@ where
         + GenRand,
 {
     offset: usize,
-    tape: Vec<GF2Word<T>>, 
+    tape: Vec<GF2Word<T>>,
 }
 
-impl<T> Tape<T> 
+impl<T> Tape<T>
 where
     T: Copy
         + Default
@@ -30,7 +36,10 @@ where
         + BytesInfo
         + GenRand,
 {
-    pub fn from_key<R: SeedableRng<Seed = Key> + RngCore + CryptoRng>(key: Key, len: usize) -> Self {
+    pub fn from_key<R: SeedableRng<Seed = Key> + RngCore + CryptoRng>(
+        key: Key,
+        len: usize,
+    ) -> Self {
         let mut rng = R::from_seed(key);
         let mut tape = Vec::with_capacity(len);
 
