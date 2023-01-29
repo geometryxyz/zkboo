@@ -99,9 +99,11 @@ where
         ^ (input_p.1 & input_p_next.0)
         ^ (ri ^ ri_next);
 
-    // if output_p != p.read_view() {
-    //     return Err(Error::VerificationError);
-    // }
+
+    /*
+        Do not check view consistency, instead generated view will be checked when checking fiat shamir 
+        as noted in O6 of (https://eprint.iacr.org/2017/279.pdf)
+     */
     p.view.send_msg(output_p);
 
     Ok((output_p, p_next.read_view()))
