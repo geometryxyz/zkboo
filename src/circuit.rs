@@ -22,14 +22,18 @@ where
         + BytesInfo
         + GenRand,
 {
-    fn compute(input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
+    fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
     fn compute_23_decomposition(
         &self,
         p1: &mut Party<T>,
         p2: &mut Party<T>,
         p3: &mut Party<T>,
     ) -> TwoThreeDecOutput<T>;
-    fn simulate_two_parties(&self, p: &mut Party<T>, p_next: &mut Party<T>) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error>;
+    fn simulate_two_parties(
+        &self,
+        p: &mut Party<T>,
+        p_next: &mut Party<T>,
+    ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error>;
     fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
@@ -72,7 +76,7 @@ mod circuit_tests {
             + BytesInfo
             + GenRand,
     {
-        fn compute(input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
+        fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
             assert_eq!(input.len(), 5);
 
             vec![(input[0] ^ input[1]) & (input[2] ^ input[3]) & input[4]]
@@ -171,9 +175,9 @@ mod circuit_tests {
         let security_param = 40;
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
-        let output = SimpleCircuit1::compute(&input);
-
         let circuit = SimpleCircuit1 {};
+        let output = circuit.compute(&input);
+
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng>(
             &mut rng,
             &input,

@@ -4,5 +4,5 @@ pub enum Error {
     HashLenError(usize, usize),
     VerificationError,
     OutputReconstructionError,
-    FiatShamirOutputsMatchingError
+    FiatShamirOutputsMatchingError,
 }

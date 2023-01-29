@@ -48,7 +48,7 @@ where
         + BytesInfo
         + GenRand,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Digest + FixedOutputReset,
+    D: Default + Digest + FixedOutputReset,
 {
     _word: PhantomData<T>,
     _tr: PhantomData<TapeR>,
@@ -213,7 +213,7 @@ where
             commitments,
             views,
             keys,
-            claimed_trits
+            claimed_trits,
         })
     }
 }

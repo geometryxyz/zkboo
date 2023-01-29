@@ -24,17 +24,20 @@ pub trait GenRand {
 }
 
 pub trait BitUtils {
-    fn get_bit(&self, pos: Self) -> Bit;
-    fn set_bit(&self, pos: Self, bit: bool) -> Self;
+    fn get_bit(&self, pos: usize) -> GF2Word<u8>;
+    fn set_bit(&self, pos: usize, bit: bool) -> Self;
+    fn leftrotate(&self, n: usize) -> Self;
+    fn rightrotate(&self, n: usize) -> Self;
+    fn zero() -> Self;
 }
 
 impl BitUtils for u8 {
-    fn get_bit(&self, pos: Self) -> Bit {
+    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
         let bit: u8 = ((self >> pos) & 1u8).try_into().unwrap();
         bit.into()
     }
 
-    fn set_bit(&self, pos: Self, bit: bool) -> Self {
+    fn set_bit(&self, pos: usize, bit: bool) -> Self {
         let mask = 1u8 << pos;
 
         if bit {
@@ -42,6 +45,20 @@ impl BitUtils for u8 {
         } else {
             self & !mask
         }
+    }
+
+    fn leftrotate(&self, n: usize) -> Self {
+        assert!(n <= 8);
+        (self << n) | (self >> (8 - n))
+    }
+
+    fn rightrotate(&self, n: usize) -> Self {
+        assert!(n <= 8);
+        (self >> n) | (self << (8 - n))
+    }
+
+    fn zero() -> Self {
+        0
     }
 }
 
@@ -64,12 +81,12 @@ impl GenRand for u8 {
 }
 
 impl BitUtils for u32 {
-    fn get_bit(&self, pos: Self) -> Bit {
+    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
         let bit: u8 = ((self >> pos) & 1u32).try_into().unwrap();
         bit.into()
     }
 
-    fn set_bit(&self, pos: Self, bit: bool) -> Self {
+    fn set_bit(&self, pos: usize, bit: bool) -> Self {
         let mask = 1u32 << pos;
 
         if bit {
@@ -77,6 +94,20 @@ impl BitUtils for u32 {
         } else {
             self & !mask
         }
+    }
+
+    fn leftrotate(&self, n: usize) -> Self {
+        assert!(n <= 32);
+        (self << n) | (self >> (32 - n))
+    }
+
+    fn rightrotate(&self, n: usize) -> Self {
+        assert!(n <= 32);
+        (self >> n) | (self << (32 - n))
+    }
+
+    fn zero() -> Self {
+        0
     }
 }
 
@@ -96,12 +127,12 @@ impl GenRand for u32 {
 }
 
 impl BitUtils for u64 {
-    fn get_bit(&self, pos: Self) -> Bit {
+    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
         let bit: u8 = ((self >> pos) & 1u64).try_into().unwrap();
         bit.into()
     }
 
-    fn set_bit(&self, pos: Self, bit: bool) -> Self {
+    fn set_bit(&self, pos: usize, bit: bool) -> Self {
         let mask = 1u64 << pos;
 
         if bit {
@@ -109,6 +140,20 @@ impl BitUtils for u64 {
         } else {
             self & !mask
         }
+    }
+
+    fn leftrotate(&self, n: usize) -> Self {
+        assert!(n <= 64);
+        (self << n) | (self >> (64 - n))
+    }
+
+    fn rightrotate(&self, n: usize) -> Self {
+        assert!(n <= 64);
+        (self >> n) | (self << (64 - n))
+    }
+
+    fn zero() -> Self {
+        0
     }
 }
 
@@ -128,12 +173,12 @@ impl GenRand for u64 {
 }
 
 impl BitUtils for u128 {
-    fn get_bit(&self, pos: Self) -> Bit {
+    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
         let bit: u8 = ((self >> pos) & 1u128).try_into().unwrap();
         bit.into()
     }
 
-    fn set_bit(&self, pos: Self, bit: bool) -> Self {
+    fn set_bit(&self, pos: usize, bit: bool) -> Self {
         let mask = 1u128 << pos;
 
         if bit {
@@ -141,6 +186,20 @@ impl BitUtils for u128 {
         } else {
             self & !mask
         }
+    }
+
+    fn leftrotate(&self, n: usize) -> Self {
+        assert!(n <= 128);
+        (self << n) | (self >> (128 - n))
+    }
+
+    fn rightrotate(&self, n: usize) -> Self {
+        assert!(n <= 128);
+        (self >> n) | (self << (128 - n))
+    }
+
+    fn zero() -> Self {
+        0
     }
 }
 

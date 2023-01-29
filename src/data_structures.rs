@@ -30,9 +30,9 @@ where
     pub view: &'a View<T>,
 }
 
-/* 
-    Based on: O4 of (https://eprint.iacr.org/2017/279.pdf)
- */
+/*
+   Based on: O4 of (https://eprint.iacr.org/2017/279.pdf)
+*/
 impl<'a, T> PartyExecution<'a, T>
 where
     T: Copy
@@ -45,9 +45,7 @@ where
         + GenRand
         + Serialize,
 {
-    pub fn commit<D: Default + Digest>(
-        &self
-    ) -> Result<Commitment<D>, Error> {
+    pub fn commit<D: Default + Digest>(&self) -> Result<Commitment<D>, Error> {
         let blinding = Blinding(self.key);
 
         let commitment = Commitment::<D>::commit(&blinding, self.view)?;
@@ -93,5 +91,5 @@ where
     pub commitments: Vec<Commitment<D>>,
     pub views: Vec<View<T>>,
     pub keys: Vec<Key>,
-    pub claimed_trits: Vec<u8>
+    pub claimed_trits: Vec<u8>,
 }

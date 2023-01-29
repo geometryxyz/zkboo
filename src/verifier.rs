@@ -10,15 +10,16 @@ use sha3::{digest::FixedOutputReset, Digest};
 
 use crate::{
     circuit::Circuit,
+    commitment::Commitment,
     config::HASH_LEN,
-    data_structures::{Proof, PublicInput, PartyExecution},
+    data_structures::{PartyExecution, Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     key::Key,
     num_of_repetitions_given_desired_security,
     party::Party,
-    tape::Tape, commitment::Commitment,
+    tape::Tape,
 };
 
 pub struct Verifier<T, TapeR, D>
@@ -74,7 +75,11 @@ where
 
         for (repetition, &party_index) in proof.claimed_trits.iter().enumerate() {
             let k_i0 = proof.keys[2 * repetition];
-            let mut p = Party::new::<TapeR>(proof.party_inputs[repetition].clone(), k_i0, circuit.num_of_mul_gates());
+            let mut p = Party::new::<TapeR>(
+                proof.party_inputs[repetition].clone(),
+                k_i0,
+                circuit.num_of_mul_gates(),
+            );
 
             let k_i1 = proof.keys[2 * repetition + 1];
             let view_i1 = &proof.views[repetition];
@@ -87,22 +92,22 @@ where
 
             /*
                 Based on O6 of (https://eprint.iacr.org/2017/279.pdf)
-                Instead of checking view consistency, full view is computed through simulation 
-                then security comes from binding property of H used when committing 
-            */ 
+                Instead of checking view consistency, full view is computed through simulation
+                then security comes from binding property of H used when committing
+            */
             let view_i0 = &p.view;
 
             let pi0_execution = PartyExecution {
-                key: &k_i0, 
-                view: &view_i0
+                key: &k_i0,
+                view: &view_i0,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
             let cm_i0 = pi0_execution.commit::<D>()?;
 
             let pi1_execution = PartyExecution {
-                key: &k_i1, 
-                view: &view_i1
+                key: &k_i1,
+                view: &view_i1,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
@@ -119,7 +124,6 @@ where
                     outputs.push(o0);
                     outputs.push(o1);
                     outputs.push(o2);
-
                 }
                 1 => {
                     all_commitments.push(cm_i2.clone());
@@ -139,7 +143,7 @@ where
                     outputs.push(o2);
                     outputs.push(o0);
                 }
-                _ => panic!("Not trit")
+                _ => panic!("Not trit"),
             };
         }
 
@@ -157,7 +161,7 @@ where
 
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
         if opening_indices != proof.claimed_trits {
-            return Err(Error::FiatShamirOutputsMatchingError)
+            return Err(Error::FiatShamirOutputsMatchingError);
         }
 
         Ok(())

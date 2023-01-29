@@ -4,7 +4,6 @@ pub mod config;
 pub mod data_structures;
 pub mod error;
 pub mod fs;
-pub mod gadgets;
 pub mod gf2_word;
 pub mod key;
 pub mod party;
@@ -12,6 +11,9 @@ pub mod prover;
 pub mod tape;
 pub mod verifier;
 pub mod view;
+
+pub mod gadgets;
+pub mod examples;
 
 pub fn num_of_repetitions_given_desired_security(sigma: usize) -> usize {
     let log_2_3_minus_1: f64 = 0.58496;
