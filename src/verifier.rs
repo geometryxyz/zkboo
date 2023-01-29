@@ -63,10 +63,14 @@ where
         let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
 
         // Based on O3 and O5 of (https://eprint.iacr.org/2017/279.pdf)
+        assert_eq!(proof.party_inputs.len(), num_of_repetitions);
         assert_eq!(proof.commitments.len(), num_of_repetitions);
+        assert_eq!(proof.views.len(), num_of_repetitions);
+        assert_eq!(proof.claimed_trits.len(), num_of_repetitions);
+        assert_eq!(proof.keys.len(), 2 * num_of_repetitions);
+
         let mut all_commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
         let mut outputs = Vec::<Vec<GF2Word<T>>>::with_capacity(3 * num_of_repetitions);
-
 
         for (repetition, &party_index) in proof.claimed_trits.iter().enumerate() {
             let k_i0 = proof.keys[2 * repetition];
