@@ -12,8 +12,8 @@ pub mod tape;
 pub mod verifier;
 pub mod view;
 
-pub mod gadgets;
 pub mod examples;
+pub mod gadgets;
 
 pub fn num_of_repetitions_given_desired_security(sigma: usize) -> usize {
     let log_2_3_minus_1: f64 = 0.58496;

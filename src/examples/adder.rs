@@ -1,8 +1,18 @@
-use std::{fmt::{Display, Debug}, ops::{BitAnd, BitXor}, marker::PhantomData};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    ops::{BitAnd, BitXor},
+};
 
-use crate::{circuit::Circuit, gf2_word::{BitUtils, BytesInfo, GenRand, GF2Word}, party::Party, error::Error, gadgets::add_mod::{mpc_add_mod, add_mod_verify}};
+use crate::{
+    circuit::Circuit,
+    error::Error,
+    gadgets::add_mod::{add_mod_verify, mpc_add_mod},
+    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    party::Party,
+};
 
-pub struct AddModCircuit<T> 
+pub struct AddModCircuit<T>
 where
     T: Copy
         + Default
@@ -15,21 +25,21 @@ where
         + BytesInfo
         + GenRand,
 {
-    _t: PhantomData<T>
+    _t: PhantomData<T>,
 }
 
-impl<T> AddModCircuit<T> 
+impl<T> AddModCircuit<T>
 where
     T: Copy
-    + Default
-    + Display
-    + Debug
-    + PartialEq
-    + BitAnd<Output = T>
-    + BitXor<Output = T>
-    + BitUtils
-    + BytesInfo
-    + GenRand,
+        + Default
+        + Display
+        + Debug
+        + PartialEq
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
 {
     fn add_mod_2_pow_t_bits(&self, x: T, y: T) -> T {
         let mut carry = T::zero();
@@ -44,9 +54,9 @@ where
             let ci = (a & b) ^ carry.get_bit(i);
             // carry = set_bit(carry, i + 1, ci);
             let ci = match ci.value {
-                0 => false, 
-                1 => true, 
-                _ => panic!("Not bit")
+                0 => false,
+                1 => true,
+                _ => panic!("Not bit"),
             };
             carry = carry.set_bit(i + 1, ci);
         }
@@ -54,8 +64,6 @@ where
         x ^ y ^ carry
     }
 }
-
-
 
 impl<T> Circuit<T> for AddModCircuit<T>
 where
@@ -91,7 +99,6 @@ where
         let input_p3 = (p3.view.input[0], p3.view.input[1]);
 
         let (o1, o2, o3) = mpc_add_mod(input_p1, input_p2, input_p3, p1, p2, p3);
-        // println!("here value: {}", (o1 ^ o2 ^ o3).value);
         (vec![o1], vec![o2], vec![o3])
     }
 
@@ -123,11 +130,11 @@ where
 mod test_adder {
     use std::marker::PhantomData;
 
-    use rand::{thread_rng, rngs::ThreadRng};
+    use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
 
-    use crate::{gf2_word::GF2Word, circuit::Circuit, prover::Prover, verifier::Verifier};
+    use crate::{circuit::Circuit, gf2_word::GF2Word, prover::Prover, verifier::Verifier};
 
     use super::AddModCircuit;
 

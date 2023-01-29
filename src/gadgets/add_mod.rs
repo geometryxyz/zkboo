@@ -26,12 +26,12 @@ fn bit_and(
     input_p1: (GF2Word<u8>, GF2Word<u8>),
     input_p2: (GF2Word<u8>, GF2Word<u8>),
     r_p1: GF2Word<u8>,
-    r_p2: GF2Word<u8>
+    r_p2: GF2Word<u8>,
 ) -> GF2Word<u8> {
     (input_p1.0 & input_p1.1)
-    ^ (input_p1.0 & input_p2.1)
-    ^ (input_p1.1 & input_p2.0)
-    ^ (r_p1 ^ r_p2)
+        ^ (input_p1.0 & input_p2.1)
+        ^ (input_p1.1 & input_p2.0)
+        ^ (r_p1 ^ r_p2)
 }
 
 /// Performs addition modulo 2^(T::bits_size)
@@ -66,7 +66,7 @@ where
         match ci.value {
             0 => false,
             1 => true,
-            _ => panic!("Not bit")
+            _ => panic!("Not bit"),
         }
     };
 
@@ -123,14 +123,14 @@ where
     let ri = p.read_tape();
     let ri_next = p_next.read_tape();
 
-    let mut carry_p = T::zero().into(); 
+    let mut carry_p = T::zero().into();
     let carry_p_next = p_next.view.read_next();
 
     let get_bit = |ci: GF2Word<u8>| -> bool {
         match ci.value {
             0 => false,
             1 => true,
-            _ => panic!("Not bit")
+            _ => panic!("Not bit"),
         }
     };
 
@@ -144,7 +144,8 @@ where
         let a_p_next = (input_p_next.0 ^ carry_p_next).value.get_bit(i);
         let b_p_next = (input_p_next.1 ^ carry_p_next).value.get_bit(i);
 
-        let ci_p = bit_and((a_p, b_p), (a_p_next, b_p_next), ri_p, ri_p_next) ^ carry_p.value.get_bit(i);
+        let ci_p =
+            bit_and((a_p, b_p), (a_p_next, b_p_next), ri_p, ri_p_next) ^ carry_p.value.get_bit(i);
 
         carry_p = carry_p.value.set_bit(i + 1, get_bit(ci_p)).into();
     }
