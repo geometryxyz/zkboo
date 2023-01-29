@@ -67,7 +67,7 @@ where
         + GenRand
         + Serialize,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Digest + FixedOutputReset,
+    D: Default + Digest + FixedOutputReset,
 {
     pub fn share<R: RngCore + CryptoRng>(
         rng: &mut R,
@@ -128,8 +128,7 @@ where
         let mut key_manager = KeyManager::new(num_of_repetitions, rng);
 
         let mut outputs = Vec::<Vec<GF2Word<T>>>::with_capacity(3 * num_of_repetitions);
-        let mut commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
-        let mut all_blinders = Vec::with_capacity(3 * num_of_repetitions);
+        let mut all_commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
         let mut all_views = Vec::with_capacity(3 * num_of_repetitions);
 
         for _ in 0..num_of_repetitions {
@@ -165,9 +164,8 @@ where
             };
 
             for pi_execution in [p1_execution, p2_execution, p3_execution] {
-                let (blinder, commitment) = pi_execution.commit(rng)?;
-                all_blinders.push(blinder);
-                commitments.push(commitment);
+                let cmi = pi_execution.commit()?;
+                all_commitments.push(cmi);
             }
         }
 
@@ -181,34 +179,41 @@ where
         // TODO: remove hardcoded seed
         let mut fs_oracle = SigmaFS::<D>::initialize(&[0u8]);
         fs_oracle.digest_public_data(&pi)?;
-        fs_oracle.digest_prover_message(&commitments)?;
+        fs_oracle.digest_prover_message(&all_commitments)?;
 
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
 
+        let mut claimed_trits = Vec::with_capacity(num_of_repetitions);
+        let mut party_inputs = Vec::with_capacity(num_of_repetitions);
+
         let mut keys = Vec::<Key>::with_capacity(2 * num_of_repetitions);
-        let mut views = Vec::with_capacity(2 * num_of_repetitions);
-        let mut blinders = Vec::with_capacity(2 * num_of_repetitions);
+        let mut views = Vec::with_capacity(num_of_repetitions);
+        let mut commitments = Vec::with_capacity(2 * num_of_repetitions);
 
         for (repetition, &party_index) in opening_indices.iter().enumerate() {
+            let party_index = party_index as usize;
             let i0 = repetition * 3 + party_index;
             let i1 = repetition * 3 + ((party_index + 1) % 3);
+            let i2 = repetition * 3 + ((party_index + 2) % 3);
 
-            views.push(std::mem::take(&mut all_views[i0]));
+            party_inputs.push(std::mem::take(&mut all_views[i0].input));
+
+            claimed_trits.push(party_index as u8);
+
             views.push(std::mem::take(&mut all_views[i1]));
-
-            blinders.push(std::mem::take(&mut all_blinders[i0]));
-            blinders.push(std::mem::take(&mut all_blinders[i1]));
 
             keys.push(key_manager.request_key_i(i0));
             keys.push(key_manager.request_key_i(i1));
+
+            commitments.push(std::mem::take(&mut all_commitments[i2]));
         }
 
         Ok(Proof {
-            outputs,
+            party_inputs,
             commitments,
             views,
             keys,
-            blinders,
+            claimed_trits
         })
     }
 }

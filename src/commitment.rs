@@ -13,13 +13,13 @@ impl<T: Serialize> AsRef<T> for Blinding<T> {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct Commitment<D: Digest> {
+#[derive(Clone, Copy, Default, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Commitment<D: Default + Digest> {
     data: [u8; HASH_LEN],
     _digest: PhantomData<D>,
 }
 
-impl<D: Digest> Commitment<D> {
+impl<D: Default + Digest> Commitment<D> {
     pub fn commit<U: Serialize, T: Serialize>(
         blinding: &Blinding<U>,
         message: &T,

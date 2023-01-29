@@ -29,7 +29,7 @@ where
         p2: &mut Party<T>,
         p3: &mut Party<T>,
     ) -> TwoThreeDecOutput<T>;
-    fn simulate_two_parties(&self, p: &mut Party<T>, p_next: &mut Party<T>) -> Result<(), Error>;
+    fn simulate_two_parties(&self, p: &mut Party<T>, p_next: &mut Party<T>) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error>;
     fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
@@ -41,13 +41,12 @@ mod circuit_tests {
         ops::{BitAnd, BitXor},
     };
 
-    use rand::{rngs::ThreadRng, thread_rng, RngCore};
+    use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
 
     use super::{Circuit, TwoThreeDecOutput};
     use crate::{
-        data_structures::{PartyExecution, Proof},
         error::Error,
         gadgets::{and_verify, mpc_and, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
@@ -125,7 +124,7 @@ mod circuit_tests {
             &self,
             p: &mut Party<T>,
             p_next: &mut Party<T>,
-        ) -> Result<(), Error> {
+        ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error> {
             assert_eq!(p.view.input.len(), 5);
             assert_eq!(p_next.view.input.len(), 5);
 
@@ -152,9 +151,9 @@ mod circuit_tests {
             let b2 = y3 ^ y4;
 
             let (ab1, ab2) = and_verify((a1, b1), (a2, b2), p, p_next)?;
-            let _ = and_verify((ab1, x5), (ab2, y5), p, p_next)?;
+            let (o1, o2) = and_verify((ab1, x5), (ab2, y5), p, p_next)?;
 
-            Ok(())
+            Ok((vec![o1], vec![o2]))
         }
 
         fn party_output_len(&self) -> usize {
@@ -164,81 +163,6 @@ mod circuit_tests {
         fn num_of_mul_gates(&self) -> usize {
             2
         }
-    }
-
-    #[test]
-    fn test_single_repetition() {
-        type U = u32;
-        let mut rng = thread_rng();
-        let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
-
-        let circuit = SimpleCircuit1 {};
-        let output = SimpleCircuit1::compute(&input);
-
-        let mut k1 = [0u8; 32];
-        let mut k2 = [0u8; 32];
-        let mut k3 = [0u8; 32];
-
-        rng.fill_bytes(&mut k1);
-        rng.fill_bytes(&mut k2);
-        rng.fill_bytes(&mut k3);
-
-        let repetition_output = Prover::<U, ChaCha20Rng, Keccak256>::prove_repetition(
-            &mut rng,
-            &input,
-            (k1, k2, k3),
-            &circuit,
-        );
-
-        let p1_execution = PartyExecution {
-            key: &k1,
-            view: &repetition_output.party_views.0,
-        };
-
-        let p2_execution = PartyExecution {
-            key: &k2,
-            view: &repetition_output.party_views.1,
-        };
-
-        let p3_execution = PartyExecution {
-            key: &k3,
-            view: &repetition_output.party_views.2,
-        };
-
-        let cm1 = p1_execution
-            .commit::<ThreadRng, Keccak256>(&mut rng)
-            .unwrap();
-        let cm2 = p2_execution
-            .commit::<ThreadRng, Keccak256>(&mut rng)
-            .unwrap();
-        let cm3 = p3_execution
-            .commit::<ThreadRng, Keccak256>(&mut rng)
-            .unwrap();
-
-        let proof = Proof::<U, Keccak256> {
-            outputs: vec![
-                repetition_output.party_outputs.0,
-                repetition_output.party_outputs.1,
-                repetition_output.party_outputs.2,
-            ],
-            commitments: vec![cm1.1, cm2.1, cm3.1],
-            views: vec![
-                repetition_output.party_views.0,
-                repetition_output.party_views.1,
-            ],
-            keys: vec![k1, k2],
-            blinders: vec![cm1.0, cm2.0],
-        };
-
-        let party_index = 0;
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify_repetition(
-            0,
-            party_index,
-            &proof,
-            &circuit,
-            &output,
-        )
-        .unwrap();
     }
 
     #[test]

@@ -69,7 +69,7 @@ pub struct SigmaFS<D: Digest + FixedOutputReset> {
     hasher: D,
 }
 
-impl<D: Digest + FixedOutputReset> SigmaFS<D> {
+impl<D: Default + Digest + FixedOutputReset> SigmaFS<D> {
     pub fn initialize(seed: &[u8]) -> Self {
         let hasher = Digest::new_with_prefix(seed);
         Self { hasher }
@@ -102,7 +102,7 @@ impl<D: Digest + FixedOutputReset> SigmaFS<D> {
         Ok(())
     }
 
-    pub fn sample_trits(&mut self, r: usize) -> Vec<usize> {
+    pub fn sample_trits(&mut self, r: usize) -> Vec<u8> {
         let mut hash = self.hasher.finalize_reset();
 
         // local closure for which pos always < 8
@@ -111,7 +111,7 @@ impl<D: Digest + FixedOutputReset> SigmaFS<D> {
         let mut sampled: usize = 0;
         let mut pos = 0;
 
-        let mut trits = vec![0usize; r];
+        let mut trits = vec![0u8; r];
 
         while sampled < r {
             if pos >= <D as OutputSizeUser>::output_size() * 8 {
@@ -125,7 +125,7 @@ impl<D: Digest + FixedOutputReset> SigmaFS<D> {
 
             let trit = (b1 << 1) | b2;
             if trit < 3 {
-                trits[sampled] = trit as usize;
+                trits[sampled] = trit;
                 sampled += 1;
             }
 

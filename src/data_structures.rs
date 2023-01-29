@@ -3,7 +3,6 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
-use rand::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 
@@ -31,6 +30,9 @@ where
     pub view: &'a View<T>,
 }
 
+/* 
+    Based on: O4 of (https://eprint.iacr.org/2017/279.pdf)
+ */
 impl<'a, T> PartyExecution<'a, T>
 where
     T: Copy
@@ -43,14 +45,13 @@ where
         + GenRand
         + Serialize,
 {
-    pub fn commit<R: RngCore + CryptoRng, D: Digest>(
-        &self,
-        rng: &mut R,
-    ) -> Result<(Blinding<u64>, Commitment<D>), Error> {
-        let blinding = Blinding(rng.next_u64());
+    pub fn commit<D: Default + Digest>(
+        &self
+    ) -> Result<Commitment<D>, Error> {
+        let blinding = Blinding(self.key);
 
-        let commitment = Commitment::<D>::commit(&blinding, &self)?;
-        Ok((blinding, commitment))
+        let commitment = Commitment::<D>::commit(&blinding, self.view)?;
+        Ok(commitment)
     }
 }
 
@@ -86,11 +87,11 @@ where
         + BytesInfo
         + GenRand
         + Serialize,
-    D: Digest,
+    D: Default + Digest,
 {
-    pub outputs: Vec<Vec<GF2Word<T>>>,
+    pub party_inputs: Vec<Vec<GF2Word<T>>>,
     pub commitments: Vec<Commitment<D>>,
     pub views: Vec<View<T>>,
     pub keys: Vec<Key>,
-    pub blinders: Vec<Blinding<u64>>,
+    pub claimed_trits: Vec<u8>
 }

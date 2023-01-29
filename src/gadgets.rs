@@ -99,9 +99,10 @@ where
         ^ (input_p.1 & input_p_next.0)
         ^ (ri ^ ri_next);
 
-    if output_p != p.read_view() {
-        return Err(Error::VerificationError);
-    }
+    // if output_p != p.read_view() {
+    //     return Err(Error::VerificationError);
+    // }
+    p.view.send_msg(output_p);
 
     Ok((output_p, p_next.read_view()))
 }
