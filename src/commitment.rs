@@ -33,7 +33,7 @@ impl<D: Default + Digest> Commitment<D> {
             bincode::serialize(blinding.as_ref()).map_err(|_| Error::SerializationError)?;
         let message = bincode::serialize(message).map_err(|_| Error::SerializationError)?;
 
-        let mut hasher: D = Digest::new_with_prefix(&blinding);
+        let mut hasher: D = Digest::new_with_prefix(blinding);
         hasher.update(&message);
 
         // safe to unwrap since we check digest output is of right side
@@ -57,7 +57,7 @@ impl<D: Default + Digest> Commitment<D> {
             bincode::serialize(blinding.as_ref()).map_err(|_| Error::SerializationError)?;
         let message = bincode::serialize(message).map_err(|_| Error::SerializationError)?;
 
-        let mut hasher: D = Digest::new_with_prefix(&blinding);
+        let mut hasher: D = Digest::new_with_prefix(blinding);
         hasher.update(&message);
 
         // safe to unwrap since we check digest output is of right side

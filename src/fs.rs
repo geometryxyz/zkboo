@@ -23,7 +23,7 @@ pub struct SigmaProtocolStatelessFiatShamir<D: Clone + Digest> {
 impl<D: Clone + Digest> SigmaProtocolStatelessFiatShamir<D> {
     pub fn sample_trits(seed: &[u8], public_data: &[u8], prover_msg: &[u8], r: usize) -> Vec<u8> {
         let with_prefix = |prefix: u8| {
-            let mut hasher = D::new_with_prefix(&[prefix]);
+            let mut hasher = D::new_with_prefix([prefix]);
             hasher.update(seed);
             hasher.update(public_data);
             hasher.update(prover_msg);

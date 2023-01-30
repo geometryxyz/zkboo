@@ -55,6 +55,8 @@ where
     _d: PhantomData<D>,
 }
 
+pub type SinglePartyResult<T> = Vec<GF2Word<T>>;
+
 impl<T, TapeR, D> Prover<T, TapeR, D>
 where
     T: Copy
@@ -72,7 +74,11 @@ where
     pub fn share<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
-    ) -> (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>) {
+    ) -> (
+        SinglePartyResult<T>,
+        SinglePartyResult<T>,
+        SinglePartyResult<T>,
+    ) {
         let share_1: Vec<GF2Word<T>> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
         let share_2: Vec<GF2Word<T>> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
 

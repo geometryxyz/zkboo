@@ -9,7 +9,12 @@ use crate::{
     party::Party,
 };
 
-pub type TwoThreeDecOutput<T> = (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>);
+pub type SinglePartyResult<T> = Vec<GF2Word<T>>;
+pub type TwoThreeDecOutput<T> = (
+    SinglePartyResult<T>,
+    SinglePartyResult<T>,
+    SinglePartyResult<T>,
+);
 
 pub trait Circuit<T>
 where
@@ -22,7 +27,7 @@ where
         + BytesInfo
         + GenRand,
 {
-    fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
+    fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>>;
     fn compute_23_decomposition(
         &self,
         p1: &mut Party<T>,
@@ -33,7 +38,7 @@ where
         &self,
         p: &mut Party<T>,
         p_next: &mut Party<T>,
-    ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error>;
+    ) -> Result<(SinglePartyResult<T>, SinglePartyResult<T>), Error>;
     fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
@@ -76,7 +81,7 @@ mod circuit_tests {
             + BytesInfo
             + GenRand,
     {
-        fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
+        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
             assert_eq!(input.len(), 5);
 
             vec![(input[0] ^ input[1]) & (input[2] ^ input[3]) & input[4]]
