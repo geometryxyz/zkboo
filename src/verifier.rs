@@ -99,7 +99,7 @@ where
 
             let pi0_execution = PartyExecution {
                 key: &k_i0,
-                view: &view_i0,
+                view: view_i0,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
@@ -107,7 +107,7 @@ where
 
             let pi1_execution = PartyExecution {
                 key: &k_i1,
-                view: &view_i1,
+                view: view_i1,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
@@ -168,7 +168,7 @@ where
     }
 
     pub fn derive_third_output(
-        public_output: &Vec<GF2Word<T>>,
+        public_output: &[GF2Word<T>],
         circuit: &impl Circuit<T>,
         circuit_simulation_output: (&Vec<GF2Word<T>>, &Vec<GF2Word<T>>),
     ) -> Vec<GF2Word<T>> {

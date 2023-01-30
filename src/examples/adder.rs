@@ -78,7 +78,7 @@ where
         + BytesInfo
         + GenRand,
 {
-    fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
+    fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
         assert_eq!(input.len(), 2);
         let res = self.add_mod_2_pow_t_bits(input[0].value, input[1].value);
         vec![res.into()]

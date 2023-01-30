@@ -33,7 +33,7 @@ pub trait BitUtils {
 
 impl BitUtils for u8 {
     fn get_bit(&self, pos: usize) -> GF2Word<u8> {
-        let bit: u8 = ((self >> pos) & 1u8).try_into().unwrap();
+        let bit: u8 = (self >> pos) & 1u8;
         bit.into()
     }
 
