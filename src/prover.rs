@@ -22,6 +22,8 @@ use crate::{
     view::View,
 };
 
+pub type Share<T> = Vec<GF2Word<T>>;
+
 pub struct RepetitionOutput<T>
 where
     T: Copy
@@ -67,16 +69,16 @@ where
         + GenRand
         + Serialize,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Default + Digest + FixedOutputReset,
+    D: Debug + Default + Digest + FixedOutputReset,
 {
     pub fn share<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
-    ) -> (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>) {
-        let share_1: Vec<GF2Word<T>> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
-        let share_2: Vec<GF2Word<T>> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
+    ) -> (Share<T>, Share<T>, Share<T>) {
+        let share_1: Share<T> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
+        let share_2: Share<T> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
 
-        let share_3: Vec<_> = input
+        let share_3: Share<T> = input
             .iter()
             .zip(share_1.iter())
             .zip(share_2.iter())

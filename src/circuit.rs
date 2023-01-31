@@ -9,7 +9,8 @@ use crate::{
     party::Party,
 };
 
-pub type TwoThreeDecOutput<T> = (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>);
+pub type Output<T> = Vec<GF2Word<T>>;
+pub type TwoThreeDecOutput<T> = (Output<T>, Output<T>, Output<T>);
 
 pub trait Circuit<T>
 where
@@ -33,7 +34,7 @@ where
         &self,
         p: &mut Party<T>,
         p_next: &mut Party<T>,
-    ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error>;
+    ) -> Result<(Output<T>, Output<T>), Error>;
     fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
@@ -49,7 +50,7 @@ mod circuit_tests {
     use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
 
-    use super::{Circuit, TwoThreeDecOutput};
+    use super::{Circuit, Output, TwoThreeDecOutput};
     use crate::{
         error::Error,
         gadgets::{and_verify, mpc_and, mpc_xor},
@@ -128,7 +129,7 @@ mod circuit_tests {
             &self,
             p: &mut Party<T>,
             p_next: &mut Party<T>,
-        ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error> {
+        ) -> Result<(Output<T>, Output<T>), Error> {
             assert_eq!(p.view.input.len(), 5);
             assert_eq!(p_next.view.input.len(), 5);
 

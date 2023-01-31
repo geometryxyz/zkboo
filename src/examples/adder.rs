@@ -106,7 +106,7 @@ where
         &self,
         p: &mut Party<T>,
         p_next: &mut Party<T>,
-    ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error> {
+    ) -> Result<(Output<T>, Output<T>), Error> {
         assert_eq!(p.view.input.len(), 2);
         assert_eq!(p_next.view.input.len(), 2);
 
