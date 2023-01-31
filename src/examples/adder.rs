@@ -53,12 +53,7 @@ where
             // let ci = (a & b) ^ get_bit(carry, i);
             let ci = (a & b) ^ carry.get_bit(i);
             // carry = set_bit(carry, i + 1, ci);
-            let ci = match ci.value {
-                0 => false,
-                1 => true,
-                _ => panic!("Not bit"),
-            };
-            carry = carry.set_bit(i + 1, ci);
+            carry = carry.set_bit(i + 1, ci.inner());
         }
 
         x ^ y ^ carry

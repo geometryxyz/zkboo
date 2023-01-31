@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{Bit, BitUtils, BytesInfo, GF2Word, GenRand},
     party::Party,
 };
 
@@ -22,12 +22,8 @@ use crate::{
 //     x ^ y ^ carry
 // }
 
-fn bit_and(
-    input_p1: (GF2Word<u8>, GF2Word<u8>),
-    input_p2: (GF2Word<u8>, GF2Word<u8>),
-    r_p1: GF2Word<u8>,
-    r_p2: GF2Word<u8>,
-) -> GF2Word<u8> {
+/// Binary multiplication gate from p.12 of https://eprint.iacr.org/2016/163.pdf
+fn bit_and(input_p1: (Bit, Bit), input_p2: (Bit, Bit), r_p1: Bit, r_p2: Bit) -> Bit {
     (input_p1.0 & input_p1.1)
         ^ (input_p1.0 & input_p2.1)
         ^ (input_p1.1 & input_p2.0)
@@ -62,14 +58,6 @@ where
     let mut carry_p2: GF2Word<T> = T::zero().into();
     let mut carry_p3: GF2Word<T> = T::zero().into();
 
-    let get_bit = |ci: GF2Word<u8>| -> bool {
-        match ci.value {
-            0 => false,
-            1 => true,
-            _ => panic!("Not bit"),
-        }
-    };
-
     for i in 0..T::bytes_len() * 8 - 1 {
         let ri_p1 = rand_p1.value.get_bit(i);
         let ri_p2 = rand_p2.value.get_bit(i);
@@ -88,9 +76,9 @@ where
         let ci_p2 = bit_and((a_p2, b_p2), (a_p3, b_p3), ri_p2, ri_p3) ^ carry_p2.value.get_bit(i);
         let ci_p3 = bit_and((a_p3, b_p3), (a_p1, b_p1), ri_p3, ri_p1) ^ carry_p3.value.get_bit(i);
 
-        carry_p1 = carry_p1.value.set_bit(i + 1, get_bit(ci_p1)).into();
-        carry_p2 = carry_p2.value.set_bit(i + 1, get_bit(ci_p2)).into();
-        carry_p3 = carry_p3.value.set_bit(i + 1, get_bit(ci_p3)).into();
+        carry_p1 = carry_p1.value.set_bit(i + 1, ci_p1.inner()).into();
+        carry_p2 = carry_p2.value.set_bit(i + 1, ci_p2.inner()).into();
+        carry_p3 = carry_p3.value.set_bit(i + 1, ci_p3.inner()).into();
     }
 
     p1.view.send_msg(carry_p1);
@@ -126,14 +114,6 @@ where
     let mut carry_p = T::zero().into();
     let carry_p_next = p_next.view.read_next();
 
-    let get_bit = |ci: GF2Word<u8>| -> bool {
-        match ci.value {
-            0 => false,
-            1 => true,
-            _ => panic!("Not bit"),
-        }
-    };
-
     for i in 0..T::bytes_len() * 8 - 1 {
         let ri_p = ri.value.get_bit(i);
         let ri_p_next = ri_next.value.get_bit(i);
@@ -147,7 +127,7 @@ where
         let ci_p =
             bit_and((a_p, b_p), (a_p_next, b_p_next), ri_p, ri_p_next) ^ carry_p.value.get_bit(i);
 
-        carry_p = carry_p.value.set_bit(i + 1, get_bit(ci_p)).into();
+        carry_p = carry_p.value.set_bit(i + 1, ci_p.inner()).into();
     }
 
     p.view.send_msg(carry_p);
