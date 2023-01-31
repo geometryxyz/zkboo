@@ -73,8 +73,7 @@ where
 }
 
 // TODO: add methods for computing proofs size, etc.
-#[derive(Serialize, Deserialize)]
-pub struct Proof<T, D>
+pub struct Proof<T, D, const SIGMA: usize>
 where
     T: Copy
         + Default

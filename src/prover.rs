@@ -118,14 +118,13 @@ where
         }
     }
 
-    pub fn prove<R: RngCore + CryptoRng>(
+    pub fn prove<R: RngCore + CryptoRng, const SIGMA: usize>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
         circuit: &impl Circuit<T>,
-        security_param: usize,
         public_output: &Vec<GF2Word<T>>,
-    ) -> Result<Proof<T, D>, Error> {
-        let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
+    ) -> Result<Proof<T, D, SIGMA>, Error> {
+        let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
 
         let mut key_manager = KeyManager::new(num_of_repetitions, rng);
 
@@ -175,7 +174,7 @@ where
             outputs: &outputs,
             public_output,
             hash_len: HASH_LEN,
-            security_param,
+            security_param: SIGMA,
         };
 
         // TODO: remove hardcoded seed

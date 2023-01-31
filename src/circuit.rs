@@ -173,22 +173,17 @@ mod circuit_tests {
     #[test]
     fn test_full_run() {
         let mut rng = thread_rng();
-        let security_param = 40;
+        const SIGMA: usize = 40;
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
         let circuit = SimpleCircuit1 {};
         let output = circuit.compute(&input);
 
-        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng>(
-            &mut rng,
-            &input,
-            &circuit,
-            security_param,
-            &output,
+        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
+            &mut rng, &input, &circuit, &output,
         )
         .unwrap();
 
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, security_param, &output)
-            .unwrap();
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output).unwrap();
     }
 }

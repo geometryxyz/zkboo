@@ -141,23 +141,19 @@ mod test_adder {
     #[test]
     fn test_circuit() {
         let mut rng = thread_rng();
-        let security_param = 80;
+        const SIGMA: usize = 80;
         let input: Vec<GF2Word<u32>> = [4294967295u32, 1].iter().map(|&vi| vi.into()).collect();
 
         let circuit = AddModCircuit::<u32> { _t: PhantomData };
 
         let output = circuit.compute(&input);
 
-        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng>(
-            &mut rng,
-            &input,
-            &circuit,
-            security_param,
-            &output,
+        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
+            &mut rng, &input, &circuit, &output,
         )
         .unwrap();
 
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, security_param, &output)
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output)
             .unwrap();
     }
 }

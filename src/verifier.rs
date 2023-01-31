@@ -55,13 +55,12 @@ where
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
     D: Clone + Default + Digest + FixedOutputReset,
 {
-    pub fn verify(
-        proof: &Proof<T, D>,
+    pub fn verify<const SIGMA: usize>(
+        proof: &Proof<T, D, SIGMA>,
         circuit: &impl Circuit<T>,
-        security_param: usize,
         public_output: &Vec<GF2Word<T>>,
     ) -> Result<(), Error> {
-        let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
+        let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
 
         // Based on O3 and O5 of (https://eprint.iacr.org/2017/279.pdf)
         assert_eq!(proof.party_inputs.len(), num_of_repetitions);
@@ -151,7 +150,7 @@ where
             outputs: &outputs,
             public_output,
             hash_len: HASH_LEN,
-            security_param,
+            security_param: SIGMA,
         };
 
         // TODO: remove hardcoded seed
