@@ -5,14 +5,14 @@ use std::{
 };
 
 use crate::{
-    circuit::Circuit,
+    circuit::{Circuit, Output},
     error::Error,
     gadgets::add_mod::{add_mod_verify, mpc_add_mod},
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     party::Party,
 };
 
-pub struct AddModCircuit<T>
+pub struct AddModCircuit<T>(PhantomData<T>)
 where
     T: Copy
         + Default
@@ -23,10 +23,7 @@ where
         + BitXor<Output = T>
         + BitUtils
         + BytesInfo
-        + GenRand,
-{
-    _t: PhantomData<T>,
-}
+        + GenRand;
 
 impl<T> AddModCircuit<T>
 where
@@ -73,7 +70,7 @@ where
         + BytesInfo
         + GenRand,
 {
-    fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
+    fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
         assert_eq!(input.len(), 2);
         let res = self.add_mod_2_pow_t_bits(input[0].value, input[1].value);
         vec![res.into()]
@@ -139,7 +136,7 @@ mod test_adder {
         const SIGMA: usize = 80;
         let input: Vec<GF2Word<u32>> = [4294967295u32, 1].iter().map(|&vi| vi.into()).collect();
 
-        let circuit = AddModCircuit::<u32> { _t: PhantomData };
+        let circuit = AddModCircuit::<u32>(PhantomData);
 
         let output = circuit.compute(&input);
 
@@ -148,7 +145,6 @@ mod test_adder {
         )
         .unwrap();
 
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output)
-            .unwrap();
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output).unwrap();
     }
 }

@@ -10,6 +10,7 @@ use crate::{
     key::Key,
 };
 
+/// A tape of values that can be read at its current `offset`.
 pub struct Tape<T>
 where
     T: Copy
@@ -36,6 +37,7 @@ where
         + BytesInfo
         + GenRand,
 {
+    /// Initialise a tape with `len` entries using `key` as random seed.
     pub fn from_key<R: SeedableRng<Seed = Key> + RngCore + CryptoRng>(
         key: Key,
         len: usize,
@@ -50,9 +52,12 @@ where
         Self { offset: 0, tape }
     }
 
+    /// Read the next value on the tape.
+    /// TODO: Return error if tape runs out of values.
     pub fn read_next(&mut self) -> GF2Word<T> {
         let ri = self.tape[self.offset];
         self.offset += 1;
+        assert!(self.offset <= self.tape.len());
         ri
     }
 }

@@ -13,13 +13,14 @@ impl<T: Serialize> AsRef<T> for Blinding<T> {
     }
 }
 
-#[derive(Clone, Copy, Default, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Commitment<D: Default + Digest> {
     data: [u8; HASH_LEN],
     _digest: PhantomData<D>,
 }
 
 impl<D: Default + Digest> Commitment<D> {
+    /// Commit to a given `message` using by hashing it with some `blinding`.
     pub fn commit<U: Serialize, T: Serialize>(
         blinding: &Blinding<U>,
         message: &T,
@@ -44,6 +45,7 @@ impl<D: Default + Digest> Commitment<D> {
         })
     }
 
+    /// Verify that the `Commitment` is consistent with a given opening.
     pub fn verify_opening<U: Serialize, T: Serialize>(
         &self,
         blinding: &Blinding<U>,

@@ -12,6 +12,7 @@ use crate::{
     view::View,
 };
 
+/// A party in the MPC protocol has a random tape and a `View`.
 pub struct Party<T>
 where
     T: Copy

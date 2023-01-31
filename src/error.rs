@@ -5,4 +5,5 @@ pub enum Error {
     VerificationError,
     OutputReconstructionError,
     FiatShamirOutputsMatchingError,
+    BitError,
 }

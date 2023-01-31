@@ -1,32 +1,22 @@
-use std::marker::PhantomData;
-
 use rand::{CryptoRng, RngCore};
 
 use crate::config::KEY_LEN;
 
 pub type Key = [u8; KEY_LEN];
-pub struct KeyManager<R>
-where
-    R: RngCore + CryptoRng,
-{
+pub struct KeyManager {
     pub keys_bytes: Vec<u8>,
     num_of_accessible_keys: usize,
     offset: usize,
-    _r: PhantomData<R>,
 }
 
-impl<R> KeyManager<R>
-where
-    R: RngCore + CryptoRng,
-{
-    pub fn new(num_repetitions: usize, rng: &mut R) -> Self {
+impl KeyManager {
+    pub fn new<R: RngCore + CryptoRng>(num_repetitions: usize, rng: &mut R) -> Self {
         let mut keys_bytes = vec![0u8; 3 * num_repetitions * KEY_LEN];
         rng.fill_bytes(&mut keys_bytes);
         Self {
             keys_bytes,
             num_of_accessible_keys: 3 * num_repetitions,
             offset: 0,
-            _r: PhantomData,
         }
     }
 

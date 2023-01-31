@@ -3,7 +3,7 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sha3::Digest;
 
 use crate::{

@@ -3,7 +3,7 @@ use rand_core::{CryptoRng, RngCore};
 use serde::Serialize;
 use sha3::{digest::FixedOutputReset, Digest};
 use std::{
-    fmt::Display,
+    fmt::{Debug, Display},
     marker::PhantomData,
     ops::{BitAnd, BitXor},
 };
@@ -39,7 +39,7 @@ where
     pub party_views: (View<T>, View<T>, View<T>),
 }
 
-pub struct Prover<T, TapeR, D>
+pub struct Prover<T, TapeR, D>(PhantomData<(T, TapeR, D)>)
 where
     T: Copy
         + Default
@@ -50,12 +50,7 @@ where
         + BytesInfo
         + GenRand,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Default + Digest + FixedOutputReset,
-{
-    _word: PhantomData<T>,
-    _tr: PhantomData<TapeR>,
-    _d: PhantomData<D>,
-}
+    D: Debug + Default + Digest + FixedOutputReset;
 
 impl<T, TapeR, D> Prover<T, TapeR, D>
 where

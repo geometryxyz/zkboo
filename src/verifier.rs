@@ -22,7 +22,7 @@ use crate::{
     tape::Tape,
 };
 
-pub struct Verifier<T, TapeR, D>
+pub struct Verifier<T, TapeR, D>(PhantomData<(T, TapeR, D)>)
 where
     T: Copy
         + Default
@@ -33,12 +33,7 @@ where
         + BytesInfo
         + GenRand,
     D: Digest + FixedOutputReset,
-    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-{
-    _t: PhantomData<T>,
-    _tr: PhantomData<TapeR>,
-    _d: PhantomData<D>,
-}
+    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng;
 
 impl<T, TapeR, D> Verifier<T, TapeR, D>
 where
@@ -98,7 +93,7 @@ where
 
             let pi0_execution = PartyExecution {
                 key: &k_i0,
-                view: &view_i0,
+                view: view_i0,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
@@ -106,7 +101,7 @@ where
 
             let pi1_execution = PartyExecution {
                 key: &k_i1,
-                view: &view_i1,
+                view: view_i1,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
@@ -167,7 +162,7 @@ where
     }
 
     pub fn derive_third_output(
-        public_output: &Vec<GF2Word<T>>,
+        public_output: &[GF2Word<T>],
         circuit: &impl Circuit<T>,
         circuit_simulation_output: (&Vec<GF2Word<T>>, &Vec<GF2Word<T>>),
     ) -> Vec<GF2Word<T>> {

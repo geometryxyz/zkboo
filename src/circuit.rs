@@ -23,7 +23,9 @@ where
         + BytesInfo
         + GenRand,
 {
-    fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
+    fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>>;
+    /// Decompose this circuit into 3 branches such that the values computed in
+    /// 2 branches reveals no information about the input x.
     fn compute_23_decomposition(
         &self,
         p1: &mut Party<T>,
@@ -77,7 +79,7 @@ mod circuit_tests {
             + BytesInfo
             + GenRand,
     {
-        fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
+        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
             assert_eq!(input.len(), 5);
 
             vec![(input[0] ^ input[1]) & (input[2] ^ input[3]) & input[4]]
