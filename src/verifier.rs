@@ -22,7 +22,7 @@ use crate::{
     tape::Tape,
 };
 
-pub struct Verifier<T, TapeR, D>
+pub struct Verifier<T, TapeR, D>(PhantomData<(T, TapeR, D)>)
 where
     T: Copy
         + Default
@@ -33,12 +33,7 @@ where
         + BytesInfo
         + GenRand,
     D: Digest + FixedOutputReset,
-    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-{
-    _t: PhantomData<T>,
-    _tr: PhantomData<TapeR>,
-    _d: PhantomData<D>,
-}
+    TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng;
 
 impl<T, TapeR, D> Verifier<T, TapeR, D>
 where
@@ -55,13 +50,12 @@ where
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
     D: Clone + Default + Digest + FixedOutputReset,
 {
-    pub fn verify(
-        proof: &Proof<T, D>,
+    pub fn verify<const SIGMA: usize>(
+        proof: &Proof<T, D, SIGMA>,
         circuit: &impl Circuit<T>,
-        security_param: usize,
         public_output: &Vec<GF2Word<T>>,
     ) -> Result<(), Error> {
-        let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
+        let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
 
         // Based on O3 and O5 of (https://eprint.iacr.org/2017/279.pdf)
         assert_eq!(proof.party_inputs.len(), num_of_repetitions);
@@ -99,7 +93,7 @@ where
 
             let pi0_execution = PartyExecution {
                 key: &k_i0,
-                view: &view_i0,
+                view: view_i0,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
@@ -107,7 +101,7 @@ where
 
             let pi1_execution = PartyExecution {
                 key: &k_i1,
-                view: &view_i1,
+                view: view_i1,
             };
 
             // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
@@ -151,7 +145,7 @@ where
             outputs: &outputs,
             public_output,
             hash_len: HASH_LEN,
-            security_param,
+            security_param: SIGMA,
         };
 
         // TODO: remove hardcoded seed
@@ -168,7 +162,7 @@ where
     }
 
     pub fn derive_third_output(
-        public_output: &Vec<GF2Word<T>>,
+        public_output: &[GF2Word<T>],
         circuit: &impl Circuit<T>,
         circuit_simulation_output: (&Vec<GF2Word<T>>, &Vec<GF2Word<T>>),
     ) -> Vec<GF2Word<T>> {

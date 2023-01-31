@@ -3,7 +3,7 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sha3::Digest;
 
 use crate::{
@@ -73,8 +73,7 @@ where
 }
 
 // TODO: add methods for computing proofs size, etc.
-#[derive(Serialize, Deserialize)]
-pub struct Proof<T, D>
+pub struct Proof<T, D, const SIGMA: usize>
 where
     T: Copy
         + Default

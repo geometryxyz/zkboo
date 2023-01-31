@@ -1,18 +1,10 @@
 use std::{
     fmt::Display,
-    ops::{BitAnd, BitXor},
+    ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr},
 };
 
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
-
-pub struct Bit(u8);
-
-impl From<u8> for Bit {
-    fn from(value: u8) -> Self {
-        Self(value)
-    }
-}
 
 pub trait BytesInfo {
     fn to_bytes(&self) -> Vec<u8>;
@@ -23,42 +15,84 @@ pub trait GenRand {
     fn gen_rand<R: RngCore + CryptoRng>(rng: &mut R) -> Self;
 }
 
-pub trait BitUtils {
-    fn get_bit(&self, pos: usize) -> GF2Word<u8>;
-    fn set_bit(&self, pos: usize, bit: bool) -> Self;
-    fn leftrotate(&self, n: usize) -> Self;
-    fn rightrotate(&self, n: usize) -> Self;
-    fn zero() -> Self;
+pub trait BitTrait:
+    Copy
+    + From<u8>
+    + Shl<usize, Output = Self>
+    + Shr<usize, Output = Self>
+    + BitAnd
+    + BitOr<Self, Output = Self>
+    + BitAnd<Self, Output = Self>
+    + Not<Output = Self>
+    + Eq
+    + PartialEq
+{
 }
 
-impl BitUtils for u8 {
-    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
-        let bit: u8 = ((self >> pos) & 1u8).try_into().unwrap();
-        bit.into()
-    }
+#[derive(Clone, Copy)]
+pub struct Bit(u8);
 
+impl Bit {
+    pub fn inner(&self) -> bool {
+        self.0 == 1
+    }
+}
+
+impl BitAnd for Bit {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl BitXor for Bit {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self {
+        Self(self.0 ^ rhs.0)
+    }
+}
+
+pub trait BitUtils: BitTrait {
+    fn zero() -> Self {
+        Self::from(0)
+    }
+    fn bits_len() -> usize;
+    /// Get the value of a bit at position `pos`, where `pos`
+    /// is little-endian. (e.g. pos = 0 returns LSB)
+    fn get_bit(&self, pos: usize) -> Bit {
+        // FIXME: Return Error::BitError
+        assert!(pos < Self::bits_len());
+        let bit = u8::from(((*self >> pos) & Self::from(1)) == Self::from(1));
+        Bit(bit)
+    }
+    /// Set the value of a bit to `bit` at position `pos`.
     fn set_bit(&self, pos: usize, bit: bool) -> Self {
-        let mask = 1u8 << pos;
+        let mask = Self::from(1) << pos;
 
         if bit {
-            self | mask
+            *self | mask
         } else {
-            self & !mask
+            *self & !mask
         }
     }
-
-    fn leftrotate(&self, n: usize) -> Self {
-        assert!(n <= 8);
-        (self << n) | (self >> (8 - n))
+    /// Rotate left by `n` bits.
+    fn left_rotate(&self, n: usize) -> Self {
+        assert!(n <= Self::bits_len());
+        (*self << n) | (*self >> (Self::bits_len() - n))
     }
-
-    fn rightrotate(&self, n: usize) -> Self {
-        assert!(n <= 8);
-        (self >> n) | (self << (8 - n))
+    /// Rotate right by `n` bits.
+    fn right_rotate(&self, n: usize) -> Self {
+        assert!(n <= Self::bits_len());
+        (*self >> n) | (*self << (Self::bits_len() - n))
     }
+}
 
-    fn zero() -> Self {
-        0
+impl BitTrait for u8 {}
+impl BitUtils for u8 {
+    fn bits_len() -> usize {
+        Self::BITS as usize
     }
 }
 
@@ -80,34 +114,10 @@ impl GenRand for u8 {
     }
 }
 
+impl BitTrait for u32 {}
 impl BitUtils for u32 {
-    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
-        let bit: u8 = ((self >> pos) & 1u32).try_into().unwrap();
-        bit.into()
-    }
-
-    fn set_bit(&self, pos: usize, bit: bool) -> Self {
-        let mask = 1u32 << pos;
-
-        if bit {
-            self | mask
-        } else {
-            self & !mask
-        }
-    }
-
-    fn leftrotate(&self, n: usize) -> Self {
-        assert!(n <= 32);
-        (self << n) | (self >> (32 - n))
-    }
-
-    fn rightrotate(&self, n: usize) -> Self {
-        assert!(n <= 32);
-        (self >> n) | (self << (32 - n))
-    }
-
-    fn zero() -> Self {
-        0
+    fn bits_len() -> usize {
+        Self::BITS as usize
     }
 }
 
@@ -126,34 +136,10 @@ impl GenRand for u32 {
     }
 }
 
+impl BitTrait for u64 {}
 impl BitUtils for u64 {
-    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
-        let bit: u8 = ((self >> pos) & 1u64).try_into().unwrap();
-        bit.into()
-    }
-
-    fn set_bit(&self, pos: usize, bit: bool) -> Self {
-        let mask = 1u64 << pos;
-
-        if bit {
-            self | mask
-        } else {
-            self & !mask
-        }
-    }
-
-    fn leftrotate(&self, n: usize) -> Self {
-        assert!(n <= 64);
-        (self << n) | (self >> (64 - n))
-    }
-
-    fn rightrotate(&self, n: usize) -> Self {
-        assert!(n <= 64);
-        (self >> n) | (self << (64 - n))
-    }
-
-    fn zero() -> Self {
-        0
+    fn bits_len() -> usize {
+        Self::BITS as usize
     }
 }
 
@@ -172,34 +158,10 @@ impl GenRand for u64 {
     }
 }
 
+impl BitTrait for u128 {}
 impl BitUtils for u128 {
-    fn get_bit(&self, pos: usize) -> GF2Word<u8> {
-        let bit: u8 = ((self >> pos) & 1u128).try_into().unwrap();
-        bit.into()
-    }
-
-    fn set_bit(&self, pos: usize, bit: bool) -> Self {
-        let mask = 1u128 << pos;
-
-        if bit {
-            self | mask
-        } else {
-            self & !mask
-        }
-    }
-
-    fn leftrotate(&self, n: usize) -> Self {
-        assert!(n <= 128);
-        (self << n) | (self >> (128 - n))
-    }
-
-    fn rightrotate(&self, n: usize) -> Self {
-        assert!(n <= 128);
-        (self >> n) | (self << (128 - n))
-    }
-
-    fn zero() -> Self {
-        0
+    fn bits_len() -> usize {
+        Self::BITS as usize
     }
 }
 
@@ -220,32 +182,21 @@ impl GenRand for u128 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+/// A wrapper type for which we implement `BitAnd`, `BitXor`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GF2Word<T>
 where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
 {
+    /// The value represented by this GF2 word
     pub value: T,
+    /// Number of bits in `T`
     pub size: usize,
 }
 
 impl<T> From<T> for GF2Word<T>
 where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
 {
     fn from(value: T) -> Self {
         GF2Word::<T> {
@@ -256,14 +207,7 @@ where
 }
 impl<T> BitAnd for GF2Word<T>
 where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
 {
     type Output = Self;
 
@@ -277,14 +221,7 @@ where
 
 impl<T> BitXor for GF2Word<T>
 where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
 {
     type Output = Self;
 

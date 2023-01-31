@@ -7,7 +7,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand};
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+/// A party's `View` consists of:
+/// - input: the party's initial share of the witness; and
+/// - messages: the messages sent to the party.
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct View<T>
 where
     T: Copy
@@ -47,6 +50,7 @@ where
         self.messages.push(msg);
     }
 
+    /// Read the message at the current `offset`.
     pub fn read_next(&mut self) -> GF2Word<T> {
         let msg_i = self.messages[self.offset];
         self.offset += 1;

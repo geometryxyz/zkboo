@@ -9,7 +9,8 @@ use crate::{
     party::Party,
 };
 
-pub type TwoThreeDecOutput<T> = (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>);
+pub type Output<T> = Vec<GF2Word<T>>;
+pub type TwoThreeDecOutput<T> = (Output<T>, Output<T>, Output<T>);
 
 pub trait Circuit<T>
 where
@@ -22,7 +23,9 @@ where
         + BytesInfo
         + GenRand,
 {
-    fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>>;
+    fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>>;
+    /// Decompose this circuit into 3 branches such that the values computed in
+    /// 2 branches reveals no information about the input x.
     fn compute_23_decomposition(
         &self,
         p1: &mut Party<T>,
@@ -33,7 +36,7 @@ where
         &self,
         p: &mut Party<T>,
         p_next: &mut Party<T>,
-    ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error>;
+    ) -> Result<(Output<T>, Output<T>), Error>;
     fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
@@ -49,7 +52,7 @@ mod circuit_tests {
     use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
 
-    use super::{Circuit, TwoThreeDecOutput};
+    use super::{Circuit, Output, TwoThreeDecOutput};
     use crate::{
         error::Error,
         gadgets::{and_verify, mpc_and, mpc_xor},
@@ -76,7 +79,7 @@ mod circuit_tests {
             + BytesInfo
             + GenRand,
     {
-        fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
+        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
             assert_eq!(input.len(), 5);
 
             vec![(input[0] ^ input[1]) & (input[2] ^ input[3]) & input[4]]
@@ -128,7 +131,7 @@ mod circuit_tests {
             &self,
             p: &mut Party<T>,
             p_next: &mut Party<T>,
-        ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error> {
+        ) -> Result<(Output<T>, Output<T>), Error> {
             assert_eq!(p.view.input.len(), 5);
             assert_eq!(p_next.view.input.len(), 5);
 
@@ -172,22 +175,17 @@ mod circuit_tests {
     #[test]
     fn test_full_run() {
         let mut rng = thread_rng();
-        let security_param = 40;
+        const SIGMA: usize = 40;
         let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
 
         let circuit = SimpleCircuit1 {};
         let output = circuit.compute(&input);
 
-        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng>(
-            &mut rng,
-            &input,
-            &circuit,
-            security_param,
-            &output,
+        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
+            &mut rng, &input, &circuit, &output,
         )
         .unwrap();
 
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, security_param, &output)
-            .unwrap();
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output).unwrap();
     }
 }

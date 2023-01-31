@@ -5,14 +5,14 @@ use std::{
 };
 
 use crate::{
-    circuit::Circuit,
+    circuit::{Circuit, Output},
     error::Error,
     gadgets::add_mod::{add_mod_verify, mpc_add_mod},
     gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
     party::Party,
 };
 
-pub struct AddModCircuit<T>
+pub struct AddModCircuit<T>(PhantomData<T>)
 where
     T: Copy
         + Default
@@ -23,10 +23,7 @@ where
         + BitXor<Output = T>
         + BitUtils
         + BytesInfo
-        + GenRand,
-{
-    _t: PhantomData<T>,
-}
+        + GenRand;
 
 impl<T> AddModCircuit<T>
 where
@@ -53,12 +50,7 @@ where
             // let ci = (a & b) ^ get_bit(carry, i);
             let ci = (a & b) ^ carry.get_bit(i);
             // carry = set_bit(carry, i + 1, ci);
-            let ci = match ci.value {
-                0 => false,
-                1 => true,
-                _ => panic!("Not bit"),
-            };
-            carry = carry.set_bit(i + 1, ci);
+            carry = carry.set_bit(i + 1, ci.inner());
         }
 
         x ^ y ^ carry
@@ -78,7 +70,7 @@ where
         + BytesInfo
         + GenRand,
 {
-    fn compute(&self, input: &Vec<GF2Word<T>>) -> Vec<GF2Word<T>> {
+    fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
         assert_eq!(input.len(), 2);
         let res = self.add_mod_2_pow_t_bits(input[0].value, input[1].value);
         vec![res.into()]
@@ -106,7 +98,7 @@ where
         &self,
         p: &mut Party<T>,
         p_next: &mut Party<T>,
-    ) -> Result<(Vec<GF2Word<T>>, Vec<GF2Word<T>>), Error> {
+    ) -> Result<(Output<T>, Output<T>), Error> {
         assert_eq!(p.view.input.len(), 2);
         assert_eq!(p_next.view.input.len(), 2);
 
@@ -141,23 +133,18 @@ mod test_adder {
     #[test]
     fn test_circuit() {
         let mut rng = thread_rng();
-        let security_param = 80;
+        const SIGMA: usize = 80;
         let input: Vec<GF2Word<u32>> = [4294967295u32, 1].iter().map(|&vi| vi.into()).collect();
 
-        let circuit = AddModCircuit::<u32> { _t: PhantomData };
+        let circuit = AddModCircuit::<u32>(PhantomData);
 
         let output = circuit.compute(&input);
 
-        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng>(
-            &mut rng,
-            &input,
-            &circuit,
-            security_param,
-            &output,
+        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
+            &mut rng, &input, &circuit, &output,
         )
         .unwrap();
 
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, security_param, &output)
-            .unwrap();
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output).unwrap();
     }
 }

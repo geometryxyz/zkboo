@@ -3,7 +3,7 @@ use rand_core::{CryptoRng, RngCore};
 use serde::Serialize;
 use sha3::{digest::FixedOutputReset, Digest};
 use std::{
-    fmt::Display,
+    fmt::{Debug, Display},
     marker::PhantomData,
     ops::{BitAnd, BitXor},
 };
@@ -22,6 +22,8 @@ use crate::{
     view::View,
 };
 
+pub type Share<T> = Vec<GF2Word<T>>;
+
 pub struct RepetitionOutput<T>
 where
     T: Copy
@@ -37,7 +39,7 @@ where
     pub party_views: (View<T>, View<T>, View<T>),
 }
 
-pub struct Prover<T, TapeR, D>
+pub struct Prover<T, TapeR, D>(PhantomData<(T, TapeR, D)>)
 where
     T: Copy
         + Default
@@ -48,12 +50,7 @@ where
         + BytesInfo
         + GenRand,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Default + Digest + FixedOutputReset,
-{
-    _word: PhantomData<T>,
-    _tr: PhantomData<TapeR>,
-    _d: PhantomData<D>,
-}
+    D: Debug + Default + Digest + FixedOutputReset;
 
 impl<T, TapeR, D> Prover<T, TapeR, D>
 where
@@ -67,16 +64,16 @@ where
         + GenRand
         + Serialize,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Default + Digest + FixedOutputReset,
+    D: Debug + Default + Digest + FixedOutputReset,
 {
     pub fn share<R: RngCore + CryptoRng>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
-    ) -> (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>) {
-        let share_1: Vec<GF2Word<T>> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
-        let share_2: Vec<GF2Word<T>> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
+    ) -> (Share<T>, Share<T>, Share<T>) {
+        let share_1: Share<T> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
+        let share_2: Share<T> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
 
-        let share_3: Vec<_> = input
+        let share_3: Share<T> = input
             .iter()
             .zip(share_1.iter())
             .zip(share_2.iter())
@@ -116,14 +113,13 @@ where
         }
     }
 
-    pub fn prove<R: RngCore + CryptoRng>(
+    pub fn prove<R: RngCore + CryptoRng, const SIGMA: usize>(
         rng: &mut R,
         input: &Vec<GF2Word<T>>,
         circuit: &impl Circuit<T>,
-        security_param: usize,
         public_output: &Vec<GF2Word<T>>,
-    ) -> Result<Proof<T, D>, Error> {
-        let num_of_repetitions = num_of_repetitions_given_desired_security(security_param);
+    ) -> Result<Proof<T, D, SIGMA>, Error> {
+        let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
 
         let mut key_manager = KeyManager::new(num_of_repetitions, rng);
 
@@ -173,7 +169,7 @@ where
             outputs: &outputs,
             public_output,
             hash_len: HASH_LEN,
-            security_param,
+            security_param: SIGMA,
         };
 
         // TODO: remove hardcoded seed
