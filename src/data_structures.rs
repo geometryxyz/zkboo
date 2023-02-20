@@ -48,7 +48,8 @@ where
     pub fn commit<D: Default + Digest>(&self) -> Result<Commitment<D>, Error> {
         let blinding = Blinding(self.key);
 
-        let commitment = Commitment::<D>::commit(&blinding, self.view)?;
+        // we omit commiting to full view to make sure that offset is not included which is just helper variable 
+        let commitment = Commitment::<D>::commit(&blinding, &[&self.view.input, &self.view.messages])?;
         Ok(commitment)
     }
 }
