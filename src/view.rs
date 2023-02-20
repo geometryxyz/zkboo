@@ -24,7 +24,7 @@ where
 {
     offset: usize,
     pub input: Vec<GF2Word<T>>,
-    messages: Vec<GF2Word<T>>,
+    pub messages: Vec<GF2Word<T>>,
 }
 
 impl<T> View<T>
