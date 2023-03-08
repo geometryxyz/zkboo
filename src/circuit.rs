@@ -55,7 +55,7 @@ mod circuit_tests {
     use super::{Circuit, Output, TwoThreeDecOutput};
     use crate::{
         error::Error,
-        gadgets::{and_verify, mpc_and, mpc_xor},
+        gadgets::{mpc_and, mpc_and_verify, mpc_xor},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
         prover::Prover,
@@ -157,8 +157,8 @@ mod circuit_tests {
             let a2 = y1 ^ y2;
             let b2 = y3 ^ y4;
 
-            let (ab1, ab2) = and_verify((a1, b1), (a2, b2), p, p_next)?;
-            let (o1, o2) = and_verify((ab1, x5), (ab2, y5), p, p_next)?;
+            let (ab1, ab2) = mpc_and_verify((a1, b1), (a2, b2), p, p_next)?;
+            let (o1, o2) = mpc_and_verify((ab1, x5), (ab2, y5), p, p_next)?;
 
             Ok((vec![o1], vec![o2]))
         }

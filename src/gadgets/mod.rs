@@ -1,4 +1,5 @@
 pub mod add_mod;
+pub mod sha256;
 pub mod verifier;
 
 use std::{
@@ -76,7 +77,7 @@ where
     (output_p1, output_p2, output_p3)
 }
 
-pub fn and_verify<T>(
+pub fn mpc_and_verify<T>(
     input_p: (GF2Word<T>, GF2Word<T>),
     input_p_next: (GF2Word<T>, GF2Word<T>),
     p: &mut Party<T>,

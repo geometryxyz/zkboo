@@ -151,7 +151,7 @@ where
         // TODO: remove hardcoded seed
         let mut fs_oracle = SigmaFS::<D>::initialize(&[0u8]);
         fs_oracle.digest_public_data(&pi)?;
-        fs_oracle.digest_prover_message(&all_commitments)?;
+        // fs_oracle.digest_prover_message(&all_commitments)?;
 
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
         if opening_indices != proof.claimed_trits {
