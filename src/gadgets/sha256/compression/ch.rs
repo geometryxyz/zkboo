@@ -91,7 +91,6 @@ mod test_ch {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gadgets::sha256::ch::ch_verify,
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
         prover::Prover,
