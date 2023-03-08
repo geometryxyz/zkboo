@@ -13,6 +13,23 @@ use crate::{
     party::Party,
 };
 
+fn maj<T>(a: T, b: T, c: T) -> T
+where
+    T: Copy
+        + Default
+        + Display
+        + Debug
+        + PartialEq
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
+{
+    // (a and b) xor (a and c) xor (b and c)
+    (a & b) ^ (a & c) ^ (b & c)
+}
+
 pub fn mpc_maj<T>(
     // a, b, c
     input_p1: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
@@ -150,8 +167,7 @@ mod test_maj {
             + GenRand,
     {
         fn maj(&self, a: T, b: T, c: T) -> T {
-            // (a and b) xor (a and c) xor (b and c)
-            (a & b) ^ (a & c) ^ (b & c)
+            super::maj(a, b, c)
         }
     }
 

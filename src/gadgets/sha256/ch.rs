@@ -14,6 +14,23 @@ use crate::{
     party::Party,
 };
 
+fn ch<T>(e: T, f: T, g: T) -> T
+where
+    T: Copy
+        + Default
+        + Display
+        + Debug
+        + PartialEq
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
+{
+    // (e and f) xor ((not e) and g)
+    (e & f) ^ (!e & g)
+}
+
 pub fn mpc_ch<T>(
     // e, f, g
     input_p1: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
@@ -143,8 +160,7 @@ mod test_ch {
             + GenRand,
     {
         fn ch(&self, e: T, f: T, g: T) -> T {
-            // (e and f) xor ((not e) and g)
-            (e & f) ^ (!e & g)
+            super::ch(e, f, g)
         }
     }
 

@@ -8,6 +8,30 @@ use crate::{
     party::Party,
 };
 
+pub fn adder<T>(x: T, y: T) -> T
+where
+    T: Copy
+        + Default
+        + Display
+        + BitAnd<Output = T>
+        + BitXor<Output = T>
+        + BitUtils
+        + BytesInfo
+        + GenRand,
+{
+    let mut carry = T::zero();
+
+    for i in 0..T::bytes_len() * 8 - 1 {
+        let a = (x ^ carry).get_bit(i);
+        let b = (y ^ carry).get_bit(i);
+
+        let ci = (a & b) ^ carry.get_bit(i);
+        carry = carry.set_bit(i + 1, ci.inner());
+    }
+
+    x ^ y ^ carry
+}
+
 // fn adder2(x: u8, y: u8) -> u8 {
 //     let mut carry: u8 = 0;
 

@@ -87,6 +87,16 @@ pub trait BitUtils: BitTrait {
         assert!(n <= Self::bits_len());
         (*self >> n) | (*self << (Self::bits_len() - n))
     }
+
+    fn left_shift(&self, n: usize) -> Self {
+        assert!(n <= Self::bits_len());
+        *self << n
+    }
+
+    fn right_shift(&self, n: usize) -> Self {
+        assert!(n <= Self::bits_len());
+        *self >> n
+    }
 }
 
 impl BitTrait for u8 {}
