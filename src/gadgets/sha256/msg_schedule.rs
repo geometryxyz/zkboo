@@ -3,12 +3,9 @@ use crate::{
         add_mod::{add_mod_verify, adder, mpc_add_mod},
         Party,
     },
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, GF2Word},
 };
-use std::{
-    fmt::{Debug, Display},
-    ops::{BitAnd, BitXor},
-};
+
 
 /// s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
 fn s0(i: usize, w: &[GF2Word<u32>]) -> GF2Word<u32> {
@@ -144,11 +141,7 @@ pub fn mpc_msg_schedule_verify(
 
 #[cfg(test)]
 mod test_msg_schedule {
-    use std::{
-        fmt::{Debug, Display},
-        marker::PhantomData,
-        ops::{BitAnd, BitXor},
-    };
+    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -157,7 +150,7 @@ mod test_msg_schedule {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{GF2Word},
         party::Party,
         prover::Prover,
         verifier::Verifier,

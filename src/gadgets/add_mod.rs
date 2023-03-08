@@ -274,19 +274,18 @@ where
 mod adder_tests {
     use std::{
         fmt::{Debug, Display},
-        marker::PhantomData,
         ops::{BitAnd, BitXor},
     };
 
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gadgets::add_mod::{add_mod_verify, add_mod_verify_k, adder, mpc_add_mod, mpc_add_mod_k},
+        gadgets::add_mod::{add_mod_verify_k, adder, mpc_add_mod_k},
         gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
         party::Party,
     };
 
-    use super::*;
+    
 
     pub struct AddModKCircuit<T>
     where

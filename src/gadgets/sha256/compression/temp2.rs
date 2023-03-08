@@ -37,11 +37,7 @@ pub fn mpc_temp2_verify(
 
 #[cfg(test)]
 mod test_temp2 {
-    use std::{
-        fmt::{Debug, Display},
-        marker::PhantomData,
-        ops::{BitAnd, BitXor},
-    };
+    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -50,7 +46,7 @@ mod test_temp2 {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{GF2Word},
         party::Party,
         prover::Prover,
         verifier::Verifier,

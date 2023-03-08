@@ -25,14 +25,14 @@ pub struct WorkingVariables {
 impl WorkingVariables {
     pub fn to_vec(&self) -> Vec<GF2Word<u32>> {
         [
-            (*self.a).into(),
-            (*self.b).into(),
-            (*self.c).into(),
-            (*self.d).into(),
-            (*self.e).into(),
-            (*self.f).into(),
-            (*self.g).into(),
-            (*self.h).into(),
+            (*self.a),
+            (*self.b),
+            (*self.c),
+            (*self.d),
+            (*self.e),
+            (*self.f),
+            (*self.g),
+            (*self.h),
         ]
         .to_vec()
     }
@@ -140,11 +140,7 @@ pub fn mpc_sha256_verify(
 
 #[cfg(test)]
 mod test_sha256 {
-    use std::{
-        fmt::{Debug, Display},
-        marker::PhantomData,
-        ops::{BitAnd, BitXor},
-    };
+    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -154,7 +150,7 @@ mod test_sha256 {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{GF2Word},
         party::Party,
         prover::Prover,
         verifier::Verifier,

@@ -41,21 +41,21 @@ pub fn compression(w: &[GF2Word<u32>; 64]) -> Vec<GF2Word<u32>> {
     for i in 0..64 {
         // - ch  := (e and f) xor ((not e) and g)
         let ch = ch::ch(
-            (*variables.e).value,
-            (*variables.f).value,
-            (*variables.g).value,
+            variables.e.value,
+            variables.f.value,
+            variables.g.value,
         );
         // - S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)
         let s1 = sigma_1(variables.e);
         // - temp1 := h + S1 + ch + k[i] + w[i]
-        let temp_1 = temp1::temp1((*variables.h).value, s1.value, ch, w[i].value, k[i].into());
+        let temp_1 = temp1::temp1(variables.h.value, s1.value, ch, w[i].value, k[i]);
         // - S0 := (a rightrotate 2) xor (a rightrotate 13) xor (a rightrotate 22)
         let s0 = sigma_0(variables.a);
         // - maj := (a and b) xor (a and c) xor (b and c)
         let maj = maj(
-            (*variables.a).value,
-            (*variables.b).value,
-            (*variables.c).value,
+            variables.a.value,
+            variables.b.value,
+            variables.c.value,
         );
         // - temp2 := S0 + maj
         let temp_2 = temp2::temp2(s0.value, maj);
@@ -68,7 +68,7 @@ pub fn compression(w: &[GF2Word<u32>; 64]) -> Vec<GF2Word<u32>> {
         variables.f = F(*variables.e);
         // e := d + temp1
         variables.e = {
-            let o = adder((*variables.d).value, temp_1);
+            let o = adder(variables.d.value, temp_1);
             E(o.into())
         };
         // d := c
@@ -309,11 +309,7 @@ pub fn mpc_compression_verify(
 
 #[cfg(test)]
 mod test_compression {
-    use std::{
-        fmt::{Debug, Display},
-        marker::PhantomData,
-        ops::{BitAnd, BitXor},
-    };
+    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -322,8 +318,7 @@ mod test_compression {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gadgets::sha256::msg_schedule::mpc_msg_schedule_verify,
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{GF2Word},
         party::Party,
         prover::Prover,
         verifier::Verifier,

@@ -9,7 +9,7 @@ use super::iv::init_iv;
 pub fn digest(compression_output: &[GF2Word<u32>; 8]) -> Vec<GF2Word<u32>> {
     let hs = init_iv().to_vec();
     hs.into_iter()
-        .zip(compression_output.into_iter())
+        .zip(compression_output.iter())
         .map(|(hs, &output)| adder(hs.value, output.value).into())
         .collect::<Vec<_>>()
         .try_into()
@@ -78,11 +78,7 @@ pub fn mpc_digest_verify(
 
 #[cfg(test)]
 mod test_digest {
-    use std::{
-        fmt::{Debug, Display},
-        marker::PhantomData,
-        ops::{BitAnd, BitXor},
-    };
+    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -91,7 +87,7 @@ mod test_digest {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{GF2Word},
         party::Party,
         prover::Prover,
         verifier::Verifier,

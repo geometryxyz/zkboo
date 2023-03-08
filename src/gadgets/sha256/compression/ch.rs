@@ -2,15 +2,12 @@
 //      = e and (f xor g) xor g
 //      = lhs xor g
 
-use std::{
-    fmt::{Debug, Display},
-    ops::{BitAnd, BitXor},
-};
+
 
 use crate::{
     error::Error,
     gadgets::{mpc_and, mpc_and_verify},
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{GF2Word},
     party::Party,
 };
 
@@ -78,11 +75,7 @@ pub fn ch_verify(
 
 #[cfg(test)]
 mod test_ch {
-    use std::{
-        fmt::{Debug, Display},
-        marker::PhantomData,
-        ops::{BitAnd, BitXor},
-    };
+    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -91,7 +84,7 @@ mod test_ch {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{GF2Word},
         party::Party,
         prover::Prover,
         verifier::Verifier,
