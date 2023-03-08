@@ -11,18 +11,7 @@ use std::{
 };
 
 /// s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
-fn s0<T>(i: usize, w: &[GF2Word<T>]) -> GF2Word<T>
-where
-    T: Copy
-        + Debug
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+fn s0(i: usize, w: &[GF2Word<u32>]) -> GF2Word<u32> {
     (w[i - 15].value.right_rotate(7)
         ^ w[i - 15].value.right_rotate(18)
         ^ w[i - 15].value.right_shift(3))
@@ -30,36 +19,14 @@ where
 }
 
 /// s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
-fn s1<T>(i: usize, w: &[GF2Word<T>]) -> GF2Word<T>
-where
-    T: Copy
-        + Debug
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+fn s1(i: usize, w: &[GF2Word<u32>]) -> GF2Word<u32> {
     (w[i - 2].value.right_rotate(17)
         ^ w[i - 2].value.right_rotate(19)
         ^ w[i - 2].value.right_shift(10))
     .into()
 }
 
-pub fn msg_schedule<T>(input: &[GF2Word<T>; 16]) -> [GF2Word<T>; 64]
-where
-    T: Copy
-        + Debug
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+pub fn msg_schedule(input: &[GF2Word<u32>; 16]) -> [GF2Word<u32>; 64] {
     let mut w = input[..].to_vec();
 
     // extend words
@@ -81,25 +48,14 @@ where
 }
 
 /// Extend the first 16 words into the remaining 48 words w[16..63] of the message schedule array
-pub fn mpc_msg_schedule<T>(
-    input_p1: &[GF2Word<T>; 16],
-    input_p2: &[GF2Word<T>; 16],
-    input_p3: &[GF2Word<T>; 16],
-    p1: &mut Party<T>,
-    p2: &mut Party<T>,
-    p3: &mut Party<T>,
-) -> ([GF2Word<T>; 64], [GF2Word<T>; 64], [GF2Word<T>; 64])
-where
-    T: Copy
-        + Debug
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+pub fn mpc_msg_schedule(
+    input_p1: &[GF2Word<u32>; 16],
+    input_p2: &[GF2Word<u32>; 16],
+    input_p3: &[GF2Word<u32>; 16],
+    p1: &mut Party<u32>,
+    p2: &mut Party<u32>,
+    p3: &mut Party<u32>,
+) -> ([GF2Word<u32>; 64], [GF2Word<u32>; 64], [GF2Word<u32>; 64]) {
     let mut w_1 = input_p1[..].to_vec();
     let mut w_2 = input_p2[..].to_vec();
     let mut w_3 = input_p3[..].to_vec();
@@ -145,23 +101,12 @@ where
     )
 }
 
-pub fn mpc_msg_schedule_verify<T>(
-    input_p: &[GF2Word<T>; 16],
-    input_p_next: &[GF2Word<T>; 16],
-    p: &mut Party<T>,
-    p_next: &mut Party<T>,
-) -> ([GF2Word<T>; 64], [GF2Word<T>; 64])
-where
-    T: Copy
-        + Debug
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+pub fn mpc_msg_schedule_verify(
+    input_p: &[GF2Word<u32>; 16],
+    input_p_next: &[GF2Word<u32>; 16],
+    p: &mut Party<u32>,
+    p_next: &mut Party<u32>,
+) -> ([GF2Word<u32>; 64], [GF2Word<u32>; 64]) {
     let mut w = input_p[..].to_vec();
     let mut w_next = input_p_next[..].to_vec();
 
@@ -220,33 +165,10 @@ mod test_msg_schedule {
 
     use super::*;
 
-    pub struct MsgScheduleCircuit<T>(PhantomData<T>)
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand;
+    pub struct MsgScheduleCircuit;
 
-    impl<T> Circuit<T> for MsgScheduleCircuit<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand,
-    {
-        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
+    impl Circuit<u32> for MsgScheduleCircuit {
+        fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
             assert_eq!(input.len(), 16);
             let res = msg_schedule(input.try_into().unwrap());
             res.to_vec()
@@ -254,10 +176,10 @@ mod test_msg_schedule {
 
         fn compute_23_decomposition(
             &self,
-            p1: &mut Party<T>,
-            p2: &mut Party<T>,
-            p3: &mut Party<T>,
-        ) -> (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>) {
+            p1: &mut Party<u32>,
+            p2: &mut Party<u32>,
+            p3: &mut Party<u32>,
+        ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
             assert_eq!(p1.view.input.len(), 16);
             assert_eq!(p2.view.input.len(), 16);
             assert_eq!(p3.view.input.len(), 16);
@@ -275,9 +197,9 @@ mod test_msg_schedule {
 
         fn simulate_two_parties(
             &self,
-            p: &mut Party<T>,
-            p_next: &mut Party<T>,
-        ) -> Result<(Output<T>, Output<T>), Error> {
+            p: &mut Party<u32>,
+            p_next: &mut Party<u32>,
+        ) -> Result<(Output<u32>, Output<u32>), Error> {
             assert_eq!(p.view.input.len(), 16);
             assert_eq!(p_next.view.input.len(), 16);
 
@@ -312,7 +234,7 @@ mod test_msg_schedule {
         .map(|&vi| vi.into())
         .collect();
 
-        let circuit = MsgScheduleCircuit::<u32>(PhantomData);
+        let circuit = MsgScheduleCircuit;
 
         let output = circuit.compute(&input);
         assert_eq!(output.len(), 64);

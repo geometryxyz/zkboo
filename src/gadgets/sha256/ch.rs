@@ -14,42 +14,20 @@ use crate::{
     party::Party,
 };
 
-fn ch<T>(e: T, f: T, g: T) -> T
-where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + PartialEq
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+fn ch(e: u32, f: u32, g: u32) -> u32 {
     // (e and f) xor ((not e) and g)
     (e & f) ^ (!e & g)
 }
 
-pub fn mpc_ch<T>(
+pub fn mpc_ch(
     // e, f, g
-    input_p1: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    input_p2: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    input_p3: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    p1: &mut Party<T>,
-    p2: &mut Party<T>,
-    p3: &mut Party<T>,
-) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+    input_p1: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    input_p2: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    input_p3: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    p1: &mut Party<u32>,
+    p2: &mut Party<u32>,
+    p3: &mut Party<u32>,
+) -> (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>) {
     // (f xor g)
     let f_xor_g_1 = input_p1.1 ^ input_p1.2;
     let f_xor_g_2 = input_p2.1 ^ input_p2.2;
@@ -73,23 +51,12 @@ where
     (output_p1, output_p2, output_p3)
 }
 
-pub fn ch_verify<T>(
-    input_p: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    input_p_next: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    p: &mut Party<T>,
-    p_next: &mut Party<T>,
-) -> Result<(GF2Word<T>, GF2Word<T>), Error>
-where
-    T: Copy
-        + Debug
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+pub fn ch_verify(
+    input_p: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    input_p_next: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    p: &mut Party<u32>,
+    p_next: &mut Party<u32>,
+) -> Result<(GF2Word<u32>, GF2Word<u32>), Error> {
     // (f xor g)
     let f_xor_g_p = input_p.1 ^ input_p.2;
     let f_xor_g_p_next = input_p_next.1 ^ input_p_next.2;
@@ -133,62 +100,21 @@ mod test_ch {
 
     use super::*;
 
-    pub struct ChCircuit<T>(PhantomData<T>)
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand;
+    pub struct ChCircuit;
 
-    impl<T> ChCircuit<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand,
-    {
-        fn ch(&self, e: T, f: T, g: T) -> T {
-            super::ch(e, f, g)
-        }
-    }
-
-    impl<T> Circuit<T> for ChCircuit<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand,
-    {
-        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
+    impl Circuit<u32> for ChCircuit {
+        fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
             assert_eq!(input.len(), 3);
-            let res = self.ch(input[0].value, input[1].value, input[2].value);
+            let res = ch(input[0].value, input[1].value, input[2].value);
             vec![res.into()]
         }
 
         fn compute_23_decomposition(
             &self,
-            p1: &mut Party<T>,
-            p2: &mut Party<T>,
-            p3: &mut Party<T>,
-        ) -> (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>) {
+            p1: &mut Party<u32>,
+            p2: &mut Party<u32>,
+            p3: &mut Party<u32>,
+        ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
             assert_eq!(p1.view.input.len(), 3);
             assert_eq!(p2.view.input.len(), 3);
             assert_eq!(p3.view.input.len(), 3);
@@ -203,9 +129,9 @@ mod test_ch {
 
         fn simulate_two_parties(
             &self,
-            p: &mut Party<T>,
-            p_next: &mut Party<T>,
-        ) -> Result<(Output<T>, Output<T>), Error> {
+            p: &mut Party<u32>,
+            p_next: &mut Party<u32>,
+        ) -> Result<(Output<u32>, Output<u32>), Error> {
             assert_eq!(p.view.input.len(), 3);
             assert_eq!(p_next.view.input.len(), 3);
 
@@ -239,7 +165,7 @@ mod test_ch {
             .map(|&vi| vi.into())
             .collect();
 
-        let circuit = ChCircuit::<u32>(PhantomData);
+        let circuit = ChCircuit;
 
         let output = circuit.compute(&input);
 

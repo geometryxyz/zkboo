@@ -13,42 +13,20 @@ use crate::{
     party::Party,
 };
 
-fn maj<T>(a: T, b: T, c: T) -> T
-where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + PartialEq
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+fn maj(a: u32, b: u32, c: u32) -> u32 {
     // (a and b) xor (a and c) xor (b and c)
     (a & b) ^ (a & c) ^ (b & c)
 }
 
-pub fn mpc_maj<T>(
+pub fn mpc_maj(
     // a, b, c
-    input_p1: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    input_p2: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    input_p3: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    p1: &mut Party<T>,
-    p2: &mut Party<T>,
-    p3: &mut Party<T>,
-) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+    input_p1: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    input_p2: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    input_p3: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    p1: &mut Party<u32>,
+    p2: &mut Party<u32>,
+    p3: &mut Party<u32>,
+) -> (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>) {
     // (a xor b)
     let a_xor_b_1 = input_p1.0 ^ input_p1.1;
     let a_xor_b_2 = input_p2.0 ^ input_p2.1;
@@ -77,23 +55,12 @@ where
     (output_p1, output_p2, output_p3)
 }
 
-pub fn maj_verify<T>(
-    input_p: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    input_p_next: (GF2Word<T>, GF2Word<T>, GF2Word<T>),
-    p: &mut Party<T>,
-    p_next: &mut Party<T>,
-) -> Result<(GF2Word<T>, GF2Word<T>), Error>
-where
-    T: Copy
-        + Debug
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesInfo
-        + GenRand,
-{
+pub fn maj_verify(
+    input_p: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    input_p_next: (GF2Word<u32>, GF2Word<u32>, GF2Word<u32>),
+    p: &mut Party<u32>,
+    p_next: &mut Party<u32>,
+) -> Result<(GF2Word<u32>, GF2Word<u32>), Error> {
     // (a xor b)
     let a_xor_b_p = input_p.0 ^ input_p.1;
     let a_xor_b_p_next = input_p_next.0 ^ input_p_next.1;
@@ -140,62 +107,21 @@ mod test_maj {
 
     use super::*;
 
-    pub struct MajCircuit<T>(PhantomData<T>)
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand;
+    pub struct MajCircuit;
 
-    impl<T> MajCircuit<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand,
-    {
-        fn maj(&self, a: T, b: T, c: T) -> T {
-            super::maj(a, b, c)
-        }
-    }
-
-    impl<T> Circuit<T> for MajCircuit<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesInfo
-            + GenRand,
-    {
-        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
+    impl Circuit<u32> for MajCircuit {
+        fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
             assert_eq!(input.len(), 3);
-            let res = self.maj(input[0].value, input[1].value, input[2].value);
+            let res = maj(input[0].value, input[1].value, input[2].value);
             vec![res.into()]
         }
 
         fn compute_23_decomposition(
             &self,
-            p1: &mut Party<T>,
-            p2: &mut Party<T>,
-            p3: &mut Party<T>,
-        ) -> (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>) {
+            p1: &mut Party<u32>,
+            p2: &mut Party<u32>,
+            p3: &mut Party<u32>,
+        ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
             assert_eq!(p1.view.input.len(), 3);
             assert_eq!(p2.view.input.len(), 3);
             assert_eq!(p3.view.input.len(), 3);
@@ -210,9 +136,9 @@ mod test_maj {
 
         fn simulate_two_parties(
             &self,
-            p: &mut Party<T>,
-            p_next: &mut Party<T>,
-        ) -> Result<(Output<T>, Output<T>), Error> {
+            p: &mut Party<u32>,
+            p_next: &mut Party<u32>,
+        ) -> Result<(Output<u32>, Output<u32>), Error> {
             assert_eq!(p.view.input.len(), 3);
             assert_eq!(p_next.view.input.len(), 3);
 
@@ -246,7 +172,7 @@ mod test_maj {
             .map(|&vi| vi.into())
             .collect();
 
-        let circuit = MajCircuit::<u32>(PhantomData);
+        let circuit = MajCircuit;
 
         let output = circuit.compute(&input);
 
