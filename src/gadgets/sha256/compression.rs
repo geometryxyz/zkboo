@@ -165,7 +165,7 @@ pub fn mpc_compression(
             let input_p1 = (*variables_1.d, temp1_1);
             let input_p2 = (*variables_2.d, temp1_2);
             let input_p3 = (*variables_3.d, temp1_3);
-            
+
             let (o1, o2, o3) = mpc_add_mod(input_p1, input_p2, input_p3, p1, p2, p3);
             (E(o1), E(o2), E(o3))
         };
@@ -191,12 +191,12 @@ pub fn mpc_compression(
         // temp2 := S0 + maj
         // Maj := (a and b) xor (a and c) xor (b and c)
         (variables_1.a, variables_2.a, variables_3.a) = {
-                let input_p1 = (temp1_1, temp2_1);
-                let input_p2 = (temp1_2, temp2_2);
-                let input_p3 = (temp1_3, temp2_3);
+            let input_p1 = (temp1_1, temp2_1);
+            let input_p2 = (temp1_2, temp2_2);
+            let input_p3 = (temp1_3, temp2_3);
 
-                let (o1, o2, o3) = mpc_add_mod(input_p1, input_p2, input_p3, p1, p2, p3);
-                (A(o1), A(o2), A(o3))
+            let (o1, o2, o3) = mpc_add_mod(input_p1, input_p2, input_p3, p1, p2, p3);
+            (A(o1), A(o2), A(o3))
         };
     }
     (
@@ -308,7 +308,7 @@ pub fn mpc_compression_verify(
 }
 
 #[cfg(test)]
-mod test_msg_schedule {
+mod test_compression {
     use std::{
         fmt::{Debug, Display},
         marker::PhantomData,

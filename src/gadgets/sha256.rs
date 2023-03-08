@@ -1,4 +1,5 @@
 mod compression;
+mod final_digest;
 mod iv;
 mod msg_schedule;
 mod test_vectors;
