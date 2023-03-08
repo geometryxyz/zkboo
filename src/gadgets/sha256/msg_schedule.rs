@@ -226,18 +226,18 @@ mod test_msg_schedule {
     fn test_circuit() {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
-        let input: Vec<GF2Word<u32>> = [
-            1u32, 2u32, 3u32, 1u32, 2u32, 3u32, 1u32, 2u32, 3u32, 1u32, 2u32, 3u32, 1u32, 2u32,
-            3u32, 1u32,
-        ]
-        .iter()
-        .map(|&vi| vi.into())
-        .collect();
+        let input: Vec<GF2Word<u32>> = crate::gadgets::sha256::test_vectors::TEST_INPUT
+            .iter()
+            .map(|&vi| vi.into())
+            .collect();
 
         let circuit = MsgScheduleCircuit;
 
         let output = circuit.compute(&input);
-        assert_eq!(output.len(), 64);
+        let expected_output = crate::gadgets::sha256::test_vectors::MSG_SCHEDULE_TEST_OUTPUT;
+        for (&word, &expected_word) in output.iter().zip(expected_output.iter()) {
+            assert_eq!(word.value, expected_word);
+        }
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng, &input, &circuit, &output,

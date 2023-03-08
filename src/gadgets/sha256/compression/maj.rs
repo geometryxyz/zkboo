@@ -13,7 +13,7 @@ use crate::{
     party::Party,
 };
 
-fn maj(a: u32, b: u32, c: u32) -> u32 {
+pub(crate) fn maj(a: u32, b: u32, c: u32) -> u32 {
     // (a and b) xor (a and c) xor (b and c)
     (a & b) ^ (a & c) ^ (b & c)
 }

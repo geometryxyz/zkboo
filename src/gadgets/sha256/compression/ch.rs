@@ -14,7 +14,7 @@ use crate::{
     party::Party,
 };
 
-fn ch(e: u32, f: u32, g: u32) -> u32 {
+pub(crate) fn ch(e: u32, f: u32, g: u32) -> u32 {
     // (e and f) xor ((not e) and g)
     (e & f) ^ (!e & g)
 }

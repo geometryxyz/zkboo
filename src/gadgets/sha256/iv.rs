@@ -20,15 +20,15 @@ pub(crate) const k: [u32; 64] = [
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ];
 
-pub fn init() -> WorkingVariables {
+pub fn init_iv() -> WorkingVariables {
     WorkingVariables {
-        a: A(h0),
-        b: B(h1),
-        c: C(h2),
-        d: D(h3),
-        e: E(h4),
-        f: F(h5),
-        g: G(h6),
-        h: H(h7),
+        a: A(h0.into()),
+        b: B(h1.into()),
+        c: C(h2.into()),
+        d: D(h3.into()),
+        e: E(h4.into()),
+        f: F(h5.into()),
+        g: G(h6.into()),
+        h: H(h7.into()),
     }
 }
