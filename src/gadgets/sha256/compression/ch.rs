@@ -2,12 +2,10 @@
 //      = e and (f xor g) xor g
 //      = lhs xor g
 
-
-
 use crate::{
     error::Error,
     gadgets::{mpc_and, mpc_and_verify},
-    gf2_word::{GF2Word},
+    gf2_word::GF2Word,
     party::Party,
 };
 
@@ -75,7 +73,6 @@ pub fn ch_verify(
 
 #[cfg(test)]
 mod test_ch {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -84,7 +81,7 @@ mod test_ch {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -146,20 +143,24 @@ mod test_ch {
         fn num_of_mul_gates(&self) -> usize {
             1
         }
+
+        fn party_input_len(&self) -> usize {
+            3
+        }
     }
 
     #[test]
     fn test_circuit() {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
-        let input: Vec<GF2Word<u32>> = [381321u32, 32131u32, 328131u32]
-            .iter()
-            .map(|&vi| vi.into())
-            .collect();
+
+        let input: Vec<u8> = [
+            381321u32.to_le_bytes(), 32131u32.to_le_bytes(), 328131u32.to_le_bytes()
+        ].into_iter().flatten().collect();
 
         let circuit = ChCircuit;
 
-        let output = circuit.compute(&input);
+        let output = circuit.compute(&circuit.prepare(&input));
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng, &input, &circuit, &output,

@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    gf2_word::{Bit, BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{Bit, BitUtils, BytesUitls, GF2Word, GenRand},
     party::Party,
 };
 
@@ -16,7 +16,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let mut carry = T::zero();
@@ -70,7 +70,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let rand_p1 = p1.read_tape();
@@ -132,7 +132,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let rand_p1 = p1.read_tape();
@@ -190,7 +190,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let ri = p.read_tape();
@@ -237,7 +237,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let ri = p.read_tape();
@@ -281,11 +281,9 @@ mod adder_tests {
         circuit::{Circuit, Output},
         error::Error,
         gadgets::add_mod::{add_mod_verify_k, adder, mpc_add_mod_k},
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
         party::Party,
     };
-
-    
 
     pub struct AddModKCircuit<T>
     where
@@ -297,7 +295,7 @@ mod adder_tests {
             + BitAnd<Output = T>
             + BitXor<Output = T>
             + BitUtils
-            + BytesInfo
+            + BytesUitls
             + GenRand,
     {
         pub k: GF2Word<T>,
@@ -313,7 +311,7 @@ mod adder_tests {
             + BitAnd<Output = T>
             + BitXor<Output = T>
             + BitUtils
-            + BytesInfo
+            + BytesUitls
             + GenRand,
     {
         fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
@@ -360,6 +358,10 @@ mod adder_tests {
         fn num_of_mul_gates(&self) -> usize {
             1
         }
+
+        fn party_input_len(&self) -> usize {
+            1
+        }
     }
 
     #[cfg(test)]
@@ -368,7 +370,7 @@ mod adder_tests {
         use rand_chacha::ChaCha20Rng;
         use sha3::Keccak256;
 
-        use crate::{circuit::Circuit, gf2_word::GF2Word, prover::Prover, verifier::Verifier};
+        use crate::{circuit::Circuit, prover::Prover, verifier::Verifier};
 
         use super::AddModKCircuit;
 
@@ -376,13 +378,13 @@ mod adder_tests {
         fn test_circuit() {
             let mut rng = thread_rng();
             const SIGMA: usize = 80;
-            let input: Vec<GF2Word<u32>> = [4294u32].iter().map(|&vi| vi.into()).collect();
+            let input = 4294u32.to_le_bytes().to_vec();
 
             let circuit = AddModKCircuit::<u32> {
                 k: 3490903u32.into(),
             };
 
-            let output = circuit.compute(&input);
+            let output = circuit.compute(&circuit.prepare(&input));
 
             let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
                 &mut rng, &input, &circuit, &output,

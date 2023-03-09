@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     error::Error,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     party::Party,
 };
 
@@ -25,7 +25,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let output_p1 = input_p1.0 ^ input_p1.1;
@@ -50,7 +50,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let r1 = p1.read_tape();
@@ -91,7 +91,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + PartialEq,
 {

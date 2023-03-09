@@ -90,7 +90,6 @@ pub fn mpc_temp1_verify(
 
 #[cfg(test)]
 mod test_temp1 {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -99,7 +98,7 @@ mod test_temp1 {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -113,7 +112,7 @@ mod test_temp1 {
 
     impl Circuit<u32> for Temp1Circuit {
         fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
-            assert_eq!(input.len(), 4);
+            assert_eq!(input.len(), self.party_input_len());
             let res = temp1(
                 input[0].value,
                 input[1].value,
@@ -130,9 +129,9 @@ mod test_temp1 {
             p2: &mut Party<u32>,
             p3: &mut Party<u32>,
         ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-            assert_eq!(p1.view.input.len(), 4);
-            assert_eq!(p2.view.input.len(), 4);
-            assert_eq!(p3.view.input.len(), 4);
+            assert_eq!(p1.view.input.len(), self.party_input_len());
+            assert_eq!(p2.view.input.len(), self.party_input_len());
+            assert_eq!(p3.view.input.len(), self.party_input_len());
 
             let input_p1 = (
                 p1.view.input[0],
@@ -162,8 +161,8 @@ mod test_temp1 {
             p: &mut Party<u32>,
             p_next: &mut Party<u32>,
         ) -> Result<(Output<u32>, Output<u32>), Error> {
-            assert_eq!(p.view.input.len(), 4);
-            assert_eq!(p_next.view.input.len(), 4);
+            assert_eq!(p.view.input.len(), self.party_input_len());
+            assert_eq!(p_next.view.input.len(), self.party_input_len());
 
             let input_p = (
                 p.view.input[0],
@@ -190,22 +189,26 @@ mod test_temp1 {
         fn num_of_mul_gates(&self) -> usize {
             4
         }
+
+        fn party_input_len(&self) -> usize {
+            4
+        }
     }
 
     #[test]
     fn test_circuit() {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
-        let input: Vec<GF2Word<u32>> = [381321u32, 32131u32, 328131u32, 313123]
-            .iter()
-            .map(|&vi| vi.into())
-            .collect();
+
+        let input: Vec<u8> = [
+            381321u32.to_le_bytes(), 32131u32.to_le_bytes(), 328131u32.to_le_bytes(), 313123u32.to_le_bytes()
+        ].into_iter().flatten().collect();
 
         let circuit = Temp1Circuit {
             k: 131321u32.into(),
         };
 
-        let output = circuit.compute(&input);
+        let output = circuit.compute(&circuit.prepare(&input));
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng, &input, &circuit, &output,

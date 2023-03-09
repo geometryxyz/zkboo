@@ -78,7 +78,6 @@ pub fn mpc_digest_verify(
 
 #[cfg(test)]
 mod test_digest {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -87,7 +86,7 @@ mod test_digest {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -109,9 +108,9 @@ mod test_digest {
             p2: &mut Party<u32>,
             p3: &mut Party<u32>,
         ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-            assert_eq!(p1.view.input.len(), 8);
-            assert_eq!(p2.view.input.len(), 8);
-            assert_eq!(p3.view.input.len(), 8);
+            assert_eq!(p1.view.input.len(), self.party_input_len());
+            assert_eq!(p2.view.input.len(), self.party_input_len());
+            assert_eq!(p3.view.input.len(), self.party_input_len());
 
             mpc_digest(
                 &p1.view.input.clone().try_into().unwrap(),
@@ -128,8 +127,8 @@ mod test_digest {
             p: &mut Party<u32>,
             p_next: &mut Party<u32>,
         ) -> Result<(Output<u32>, Output<u32>), Error> {
-            assert_eq!(p.view.input.len(), 8);
-            assert_eq!(p_next.view.input.len(), 8);
+            assert_eq!(p.view.input.len(), self.party_input_len());
+            assert_eq!(p_next.view.input.len(), self.party_input_len());
 
             let (o1, o2) = mpc_digest_verify(
                 &p.view.input.clone().try_into().unwrap(),
@@ -139,6 +138,10 @@ mod test_digest {
             );
 
             Ok((o1.to_vec(), o2.to_vec()))
+        }
+
+        fn party_input_len(&self) -> usize {
+            8
         }
 
         fn party_output_len(&self) -> usize {
@@ -154,14 +157,12 @@ mod test_digest {
     fn test_circuit() {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
-        let input: Vec<GF2Word<u32>> = crate::gadgets::sha256::test_vectors::COMPRESSION_OUTPUT
-            .iter()
-            .map(|&vi| vi.into())
-            .collect();
+        let input: Vec<u8> = crate::gadgets::sha256::test_vectors::COMPRESSION_OUTPUT
+        .iter().map(|v| v.to_le_bytes()).flatten().collect();
 
         let circuit = DigestCircuit;
 
-        let output = circuit.compute(&input);
+        let output = circuit.compute(&circuit.prepare(&input));
         let expected_output = crate::gadgets::sha256::test_vectors::DIGEST_OUTPUT;
         for (&word, &expected_word) in output.iter().zip(expected_output.iter()) {
             assert_eq!(word.value, expected_word);

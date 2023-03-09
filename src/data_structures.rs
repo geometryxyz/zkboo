@@ -9,7 +9,7 @@ use sha3::Digest;
 use crate::{
     commitment::{Blinding, Commitment},
     error::Error,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     key::Key,
     view::View,
 };
@@ -23,7 +23,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     pub key: &'a Key,
@@ -41,7 +41,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + Serialize,
 {
@@ -64,7 +64,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + Serialize,
 {
@@ -83,7 +83,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + Serialize,
     D: Default + Digest,

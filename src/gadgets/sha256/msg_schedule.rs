@@ -6,7 +6,6 @@ use crate::{
     gf2_word::{BitUtils, GF2Word},
 };
 
-
 /// s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
 fn s0(i: usize, w: &[GF2Word<u32>]) -> GF2Word<u32> {
     (w[i - 15].value.right_rotate(7)
@@ -141,7 +140,6 @@ pub fn mpc_msg_schedule_verify(
 
 #[cfg(test)]
 mod test_msg_schedule {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -150,7 +148,7 @@ mod test_msg_schedule {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -162,7 +160,7 @@ mod test_msg_schedule {
 
     impl Circuit<u32> for MsgScheduleCircuit {
         fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
-            assert_eq!(input.len(), 16);
+            assert_eq!(input.len(), self.party_input_len());
             let res = msg_schedule(input.try_into().unwrap());
             res.to_vec()
         }
@@ -173,9 +171,9 @@ mod test_msg_schedule {
             p2: &mut Party<u32>,
             p3: &mut Party<u32>,
         ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-            assert_eq!(p1.view.input.len(), 16);
-            assert_eq!(p2.view.input.len(), 16);
-            assert_eq!(p3.view.input.len(), 16);
+            assert_eq!(p1.view.input.len(), self.party_input_len());
+            assert_eq!(p2.view.input.len(), self.party_input_len());
+            assert_eq!(p3.view.input.len(), self.party_input_len());
 
             let (o1, o2, o3) = mpc_msg_schedule(
                 &p1.view.input.clone().try_into().unwrap(),
@@ -193,8 +191,8 @@ mod test_msg_schedule {
             p: &mut Party<u32>,
             p_next: &mut Party<u32>,
         ) -> Result<(Output<u32>, Output<u32>), Error> {
-            assert_eq!(p.view.input.len(), 16);
-            assert_eq!(p_next.view.input.len(), 16);
+            assert_eq!(p.view.input.len(), self.party_input_len());
+            assert_eq!(p_next.view.input.len(), self.party_input_len());
 
             let (o1, o2) = mpc_msg_schedule_verify(
                 &p.view.input.clone().try_into().unwrap(),
@@ -204,6 +202,11 @@ mod test_msg_schedule {
             );
 
             Ok((o1.to_vec(), o2.to_vec()))
+        }
+
+
+        fn party_input_len(&self) -> usize {
+            16
         }
 
         fn party_output_len(&self) -> usize {
@@ -219,14 +222,15 @@ mod test_msg_schedule {
     fn test_circuit() {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
-        let input: Vec<GF2Word<u32>> = crate::gadgets::sha256::test_vectors::TEST_INPUT
+        let input: Vec<u8> = crate::gadgets::sha256::test_vectors::TEST_INPUT
             .iter()
-            .map(|&vi| vi.into())
+            .map(|&vi| vi.to_le_bytes())
+            .flatten()
             .collect();
 
         let circuit = MsgScheduleCircuit;
 
-        let output = circuit.compute(&input);
+        let output = circuit.compute(&circuit.prepare(&input));
         let expected_output = crate::gadgets::sha256::test_vectors::MSG_SCHEDULE_TEST_OUTPUT;
         for (&word, &expected_word) in output.iter().zip(expected_output.iter()) {
             assert_eq!(word.value, expected_word);

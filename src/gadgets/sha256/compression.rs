@@ -40,11 +40,7 @@ pub fn compression(w: &[GF2Word<u32>; 64]) -> Vec<GF2Word<u32>> {
 
     for i in 0..64 {
         // - ch  := (e and f) xor ((not e) and g)
-        let ch = ch::ch(
-            variables.e.value,
-            variables.f.value,
-            variables.g.value,
-        );
+        let ch = ch::ch(variables.e.value, variables.f.value, variables.g.value);
         // - S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)
         let s1 = sigma_1(variables.e);
         // - temp1 := h + S1 + ch + k[i] + w[i]
@@ -52,11 +48,7 @@ pub fn compression(w: &[GF2Word<u32>; 64]) -> Vec<GF2Word<u32>> {
         // - S0 := (a rightrotate 2) xor (a rightrotate 13) xor (a rightrotate 22)
         let s0 = sigma_0(variables.a);
         // - maj := (a and b) xor (a and c) xor (b and c)
-        let maj = maj(
-            variables.a.value,
-            variables.b.value,
-            variables.c.value,
-        );
+        let maj = maj(variables.a.value, variables.b.value, variables.c.value);
         // - temp2 := S0 + maj
         let temp_2 = temp2::temp2(s0.value, maj);
 
@@ -309,7 +301,6 @@ pub fn mpc_compression_verify(
 
 #[cfg(test)]
 mod test_compression {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -318,7 +309,7 @@ mod test_compression {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -330,7 +321,7 @@ mod test_compression {
 
     impl Circuit<u32> for CompressionCircuit {
         fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
-            assert_eq!(input.len(), 64);
+            assert_eq!(input.len(), self.party_input_len());
             compression(&input.try_into().unwrap())
         }
 
@@ -340,9 +331,9 @@ mod test_compression {
             p2: &mut Party<u32>,
             p3: &mut Party<u32>,
         ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-            assert_eq!(p1.view.input.len(), 64);
-            assert_eq!(p2.view.input.len(), 64);
-            assert_eq!(p3.view.input.len(), 64);
+            assert_eq!(p1.view.input.len(), self.party_input_len());
+            assert_eq!(p2.view.input.len(), self.party_input_len());
+            assert_eq!(p3.view.input.len(), self.party_input_len());
 
             mpc_compression(
                 &p1.view.input.clone().try_into().unwrap(),
@@ -359,8 +350,8 @@ mod test_compression {
             p: &mut Party<u32>,
             p_next: &mut Party<u32>,
         ) -> Result<(Output<u32>, Output<u32>), Error> {
-            assert_eq!(p.view.input.len(), 64);
-            assert_eq!(p_next.view.input.len(), 64);
+            assert_eq!(p.view.input.len(), self.party_input_len());
+            assert_eq!(p_next.view.input.len(), self.party_input_len());
 
             let (o1, o2) = mpc_compression_verify(
                 &p.view.input.clone().try_into().unwrap(),
@@ -379,21 +370,22 @@ mod test_compression {
         fn num_of_mul_gates(&self) -> usize {
             9 * 64
         }
+
+        fn party_input_len(&self) -> usize {
+            64
+        }
     }
 
     #[test]
     fn test_circuit() {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
-        let input: Vec<GF2Word<u32>> =
-            crate::gadgets::sha256::test_vectors::MSG_SCHEDULE_TEST_OUTPUT
-                .iter()
-                .map(|&vi| vi.into())
-                .collect();
+
+        let input: Vec<u8> = crate::gadgets::sha256::test_vectors::MSG_SCHEDULE_TEST_OUTPUT.iter().map(|&wi| wi.to_le_bytes()).into_iter().flatten().collect();
 
         let circuit = CompressionCircuit;
 
-        let output = circuit.compute(&input);
+        let output = circuit.compute(&circuit.prepare(&input));
         let expected_output = crate::gadgets::sha256::test_vectors::COMPRESSION_OUTPUT;
         for (&word, &expected_word) in output.iter().zip(expected_output.iter()) {
             assert_eq!(word.value, expected_word);

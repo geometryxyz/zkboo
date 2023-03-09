@@ -15,7 +15,7 @@ use crate::{
     data_structures::{PartyExecution, Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     key::{Key, KeyManager},
     num_of_repetitions_given_desired_security,
     party::Party,
@@ -32,7 +32,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     pub party_outputs: TwoThreeDecOutput<T>,
@@ -47,7 +47,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
     D: Debug + Default + Digest + FixedOutputReset;
@@ -60,7 +60,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + Serialize,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
@@ -115,7 +115,7 @@ where
 
     pub fn prove<R: RngCore + CryptoRng, const SIGMA: usize>(
         rng: &mut R,
-        input: &Vec<GF2Word<T>>,
+        witness: &[u8],
         circuit: &impl Circuit<T>,
         public_output: &Vec<GF2Word<T>>,
     ) -> Result<Proof<T, D, SIGMA>, Error> {
@@ -127,12 +127,14 @@ where
         let mut all_commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
         let mut all_views = Vec::with_capacity(3 * num_of_repetitions);
 
+        let input = circuit.prepare(witness);
+
         for _ in 0..num_of_repetitions {
             let k1 = key_manager.request_key();
             let k2 = key_manager.request_key();
             let k3 = key_manager.request_key();
 
-            let repetition_output = Self::prove_repetition(rng, input, (k1, k2, k3), circuit);
+            let repetition_output = Self::prove_repetition(rng, &input, (k1, k2, k3), circuit);
 
             // record all outputs
             outputs.push(repetition_output.party_outputs.0);

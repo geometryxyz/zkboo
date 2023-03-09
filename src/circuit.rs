@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     error::Error,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     party::Party,
 };
 
@@ -20,10 +20,16 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>>;
+
+    fn prepare(&self, input: &[u8]) -> Vec<GF2Word<T>> {
+        assert_eq!(self.party_input_len() * T::bytes_len(), input.len());
+        input.chunks(T::bytes_len()).map(|chunk| T::from_le_bytes(chunk).into()).collect()
+    }
+    
     /// Decompose this circuit into 3 branches such that the values computed in
     /// 2 branches reveals no information about the input x.
     fn compute_23_decomposition(
@@ -37,6 +43,7 @@ where
         p: &mut Party<T>,
         p_next: &mut Party<T>,
     ) -> Result<(Output<T>, Output<T>), Error>;
+    fn party_input_len(&self) -> usize;
     fn party_output_len(&self) -> usize;
     fn num_of_mul_gates(&self) -> usize;
 }
@@ -56,7 +63,7 @@ mod circuit_tests {
     use crate::{
         error::Error,
         gadgets::{mpc_and, mpc_and_verify, mpc_xor},
-        gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+        gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -76,7 +83,7 @@ mod circuit_tests {
             + BitAnd<Output = T>
             + BitXor<Output = T>
             + BitUtils
-            + BytesInfo
+            + BytesUitls
             + GenRand,
     {
         fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
@@ -163,6 +170,10 @@ mod circuit_tests {
             Ok((vec![o1], vec![o2]))
         }
 
+        fn party_input_len(&self) -> usize {
+            5
+        }
+
         fn party_output_len(&self) -> usize {
             1
         }
@@ -176,10 +187,12 @@ mod circuit_tests {
     fn test_full_run() {
         let mut rng = thread_rng();
         const SIGMA: usize = 40;
-        let input: Vec<GF2Word<_>> = [5u32, 4, 7, 2, 9].iter().map(|&vi| vi.into()).collect();
+        let input: Vec<u8> = [
+            5u32.to_le_bytes(), 4u32.to_le_bytes(), 7u32.to_le_bytes(), 2u32.to_le_bytes(), 9u32.to_le_bytes()
+        ].into_iter().flatten().collect();
 
         let circuit = SimpleCircuit1 {};
-        let output = circuit.compute(&input);
+        let output = circuit.compute(&circuit.prepare(&input));
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng, &input, &circuit, &output,
