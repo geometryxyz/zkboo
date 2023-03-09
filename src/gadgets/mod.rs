@@ -1,6 +1,7 @@
 pub mod add_mod;
 pub mod sha256;
 pub mod verifier;
+pub mod prepare;
 
 use std::{
     fmt::{Debug, Display},

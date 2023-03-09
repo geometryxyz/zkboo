@@ -1,5 +1,5 @@
 use std::{
-    fmt::Display,
+    fmt::{Display, Debug},
     marker::PhantomData,
     ops::{BitAnd, BitXor},
 };
@@ -40,6 +40,7 @@ where
     T: Copy
         + Default
         + Display
+        + Debug
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils

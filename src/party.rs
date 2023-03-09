@@ -40,7 +40,7 @@ where
         + GenRand,
 {
     pub fn new<TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng>(
-        share: Vec<GF2Word<T>>,
+        share: Vec<u8>,
         k: Key,
         tape_len: usize,
     ) -> Self {

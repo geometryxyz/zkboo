@@ -29,6 +29,7 @@ where
     T: Copy
         + Default
         + Display
+        + Debug
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
@@ -44,6 +45,7 @@ where
     T: Copy
         + Default
         + Display
+        + Debug
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
@@ -57,6 +59,7 @@ where
     T: Copy
         + Default
         + Display
+        + Debug
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
@@ -68,12 +71,12 @@ where
 {
     pub fn share<R: RngCore + CryptoRng>(
         rng: &mut R,
-        input: &Vec<GF2Word<T>>,
-    ) -> (Share<T>, Share<T>, Share<T>) {
-        let share_1: Share<T> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
-        let share_2: Share<T> = (0..input.len()).map(|_| T::gen_rand(rng).into()).collect();
+        input: &[u8],
+    ) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+        let share_1: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng).into()).collect();
+        let share_2: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng).into()).collect();
 
-        let share_3: Share<T> = input
+        let share_3: Vec<u8> = input
             .iter()
             .zip(share_1.iter())
             .zip(share_2.iter())
@@ -85,7 +88,7 @@ where
 
     pub fn init_parties<R: RngCore + CryptoRng>(
         rng: &mut R,
-        input: &Vec<GF2Word<T>>,
+        input: &[u8],
         keys: (Key, Key, Key),
         tape_len: usize,
     ) -> (Party<T>, Party<T>, Party<T>) {
@@ -100,7 +103,7 @@ where
 
     pub fn prove_repetition<R: RngCore + CryptoRng>(
         rng: &mut R,
-        input: &Vec<GF2Word<T>>,
+        input: &[u8],
         keys: (Key, Key, Key),
         circuit: &impl Circuit<T>,
     ) -> RepetitionOutput<T> {
@@ -127,14 +130,12 @@ where
         let mut all_commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
         let mut all_views = Vec::with_capacity(3 * num_of_repetitions);
 
-        let input = circuit.prepare(witness);
-
         for _ in 0..num_of_repetitions {
             let k1 = key_manager.request_key();
             let k2 = key_manager.request_key();
             let k3 = key_manager.request_key();
 
-            let repetition_output = Self::prove_repetition(rng, &input, (k1, k2, k3), circuit);
+            let repetition_output = Self::prove_repetition(rng, witness, (k1, k2, k3), circuit);
 
             // record all outputs
             outputs.push(repetition_output.party_outputs.0);

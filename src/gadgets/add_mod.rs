@@ -280,7 +280,7 @@ mod adder_tests {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gadgets::add_mod::{add_mod_verify_k, adder, mpc_add_mod_k},
+        gadgets::{add_mod::{add_mod_verify_k, adder, mpc_add_mod_k}, prepare::generic_parse},
         gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
         party::Party,
     };
@@ -314,9 +314,9 @@ mod adder_tests {
             + BytesUitls
             + GenRand,
     {
-        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
-            assert_eq!(input.len(), 1);
-            let res = adder(input[0].value, self.k.value);
+        fn compute(&self, input: &[u8]) -> Vec<GF2Word<T>> {
+            let input = generic_parse(input, self.party_input_len())[0];
+            let res = adder(input.value, self.k.value);
             vec![res.into()]
         }
 
@@ -326,13 +326,9 @@ mod adder_tests {
             p2: &mut Party<T>,
             p3: &mut Party<T>,
         ) -> (Vec<GF2Word<T>>, Vec<GF2Word<T>>, Vec<GF2Word<T>>) {
-            assert_eq!(p1.view.input.len(), 1);
-            assert_eq!(p2.view.input.len(), 1);
-            assert_eq!(p3.view.input.len(), 1);
-
-            let input_p1 = p1.view.input[0];
-            let input_p2 = p2.view.input[0];
-            let input_p3 = p3.view.input[0];
+            let input_p1 = generic_parse(&p1.view.input, self.party_input_len())[0];
+            let input_p2 = generic_parse(&p2.view.input, self.party_input_len())[0];
+            let input_p3 = generic_parse(&p3.view.input, self.party_input_len())[0];
 
             let (o1, o2, o3) = mpc_add_mod_k(input_p1, input_p2, input_p3, self.k, p1, p2, p3);
             (vec![o1], vec![o2], vec![o3])
@@ -343,11 +339,11 @@ mod adder_tests {
             p: &mut Party<T>,
             p_next: &mut Party<T>,
         ) -> Result<(Output<T>, Output<T>), Error> {
-            assert_eq!(p.view.input.len(), 1);
-            assert_eq!(p_next.view.input.len(), 1);
+            let input_p = generic_parse(&p.view.input, self.party_input_len())[0];
+            let input_p_next = generic_parse(&p_next.view.input, self.party_input_len())[0];
 
             let (o1, o2) =
-                add_mod_verify_k(p.view.input[0], p_next.view.input[0], self.k, p, p_next);
+                add_mod_verify_k(input_p, input_p_next, self.k, p, p_next);
             Ok((vec![o1], vec![o2]))
         }
 
@@ -384,7 +380,7 @@ mod adder_tests {
                 k: 3490903u32.into(),
             };
 
-            let output = circuit.compute(&circuit.prepare(&input));
+            let output = circuit.compute(&input);
 
             let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
                 &mut rng, &input, &circuit, &output,

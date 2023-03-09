@@ -1,6 +1,6 @@
 use std::{
-    fmt::Display,
-    ops::{BitAnd, BitXor},
+    fmt::{Display, Debug},
+    ops::{BitAnd, BitXor}
 };
 
 use crate::{
@@ -14,21 +14,18 @@ pub type TwoThreeDecOutput<T> = (Output<T>, Output<T>, Output<T>);
 
 pub trait Circuit<T>
 where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
+T: Copy
+    + Default
+    + Display
+    + Debug
+    + PartialEq
+    + BitAnd<Output = T>
+    + BitXor<Output = T>
+    + BitUtils
+    + BytesUitls
+    + GenRand,
 {
-    fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>>;
-
-    fn prepare(&self, input: &[u8]) -> Vec<GF2Word<T>> {
-        assert_eq!(self.party_input_len() * T::bytes_len(), input.len());
-        input.chunks(T::bytes_len()).map(|chunk| T::from_le_bytes(chunk).into()).collect()
-    }
+    fn compute(&self, input: &[u8]) -> Vec<GF2Word<T>>;
     
     /// Decompose this circuit into 3 branches such that the values computed in
     /// 2 branches reveals no information about the input x.
@@ -52,7 +49,7 @@ where
 mod circuit_tests {
     use std::{
         fmt::{Debug, Display},
-        ops::{BitAnd, BitXor},
+        ops::{BitAnd, BitXor}, marker::PhantomData,
     };
 
     use rand::{rngs::ThreadRng, thread_rng};
@@ -62,7 +59,7 @@ mod circuit_tests {
     use super::{Circuit, Output, TwoThreeDecOutput};
     use crate::{
         error::Error,
-        gadgets::{mpc_and, mpc_and_verify, mpc_xor},
+        gadgets::{mpc_and, mpc_and_verify, mpc_xor, prepare::{generic_parse}},
         gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
         party::Party,
         prover::Prover,
@@ -71,9 +68,9 @@ mod circuit_tests {
 
     // computes: (x1 ^ x2) & (x3 ^ x4) & x5
     #[derive(Clone, Copy)]
-    struct SimpleCircuit1 {}
+    struct SimpleCircuit1<T>(PhantomData<T>);
 
-    impl<T> Circuit<T> for SimpleCircuit1
+    impl<T> Circuit<T> for SimpleCircuit1<T>
     where
         T: Copy
             + Default
@@ -86,10 +83,9 @@ mod circuit_tests {
             + BytesUitls
             + GenRand,
     {
-        fn compute(&self, input: &[GF2Word<T>]) -> Vec<GF2Word<T>> {
-            assert_eq!(input.len(), 5);
-
-            vec![(input[0] ^ input[1]) & (input[2] ^ input[3]) & input[4]]
+        fn compute(&self, input: &[u8]) -> Vec<GF2Word<T>> {
+            let x = generic_parse(input, self.party_input_len());
+            vec![(x[0] ^ x[1]) & (x[2] ^ x[3]) & x[4]]
         }
 
         fn compute_23_decomposition(
@@ -98,30 +94,32 @@ mod circuit_tests {
             p2: &mut Party<T>,
             p3: &mut Party<T>,
         ) -> TwoThreeDecOutput<T> {
-            assert_eq!(p1.view.input.len(), 5);
-            assert_eq!(p2.view.input.len(), 5);
-            assert_eq!(p3.view.input.len(), 5);
+            // prepare 
+            let x = generic_parse(&p1.view.input, 5);
+            let y = generic_parse(&p2.view.input, 5);
+            let z = generic_parse(&p3.view.input, 5);
+
 
             let (x1, x2, x3, x4, x5) = (
-                p1.view.input[0],
-                p1.view.input[1],
-                p1.view.input[2],
-                p1.view.input[3],
-                p1.view.input[4],
+                x[0],
+                x[1],
+                x[2],
+                x[3],
+                x[4],
             );
             let (y1, y2, y3, y4, y5) = (
-                p2.view.input[0],
-                p2.view.input[1],
-                p2.view.input[2],
-                p2.view.input[3],
-                p2.view.input[4],
+                y[0],
+                y[1],
+                y[2],
+                y[3],
+                y[4],
             );
             let (z1, z2, z3, z4, z5) = (
-                p3.view.input[0],
-                p3.view.input[1],
-                p3.view.input[2],
-                p3.view.input[3],
-                p3.view.input[4],
+                z[0],
+                z[1],
+                z[2],
+                z[3],
+                z[4],
             );
 
             let (a1, a2, a3) = mpc_xor((x1, x2), (y1, y2), (z1, z2));
@@ -139,23 +137,24 @@ mod circuit_tests {
             p: &mut Party<T>,
             p_next: &mut Party<T>,
         ) -> Result<(Output<T>, Output<T>), Error> {
-            assert_eq!(p.view.input.len(), 5);
-            assert_eq!(p_next.view.input.len(), 5);
+            let p_inputs = generic_parse(&p.view.input, self.party_input_len());
+            let p_next_inputs = generic_parse(&p_next.view.input, self.party_input_len());
+
 
             let (x1, x2, x3, x4, x5) = (
-                p.view.input[0],
-                p.view.input[1],
-                p.view.input[2],
-                p.view.input[3],
-                p.view.input[4],
+                p_inputs[0],
+                p_inputs[1],
+                p_inputs[2],
+                p_inputs[3],
+                p_inputs[4],
             );
 
             let (y1, y2, y3, y4, y5) = (
-                p_next.view.input[0],
-                p_next.view.input[1],
-                p_next.view.input[2],
-                p_next.view.input[3],
-                p_next.view.input[4],
+                p_next_inputs[0],
+                p_next_inputs[1],
+                p_next_inputs[2],
+                p_next_inputs[3],
+                p_next_inputs[4],
             );
 
             let a1 = x1 ^ x2;
@@ -191,8 +190,8 @@ mod circuit_tests {
             5u32.to_le_bytes(), 4u32.to_le_bytes(), 7u32.to_le_bytes(), 2u32.to_le_bytes(), 9u32.to_le_bytes()
         ].into_iter().flatten().collect();
 
-        let circuit = SimpleCircuit1 {};
-        let output = circuit.compute(&circuit.prepare(&input));
+        let circuit = SimpleCircuit1(PhantomData);
+        let output = circuit.compute(&input);
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng, &input, &circuit, &output,

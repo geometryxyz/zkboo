@@ -90,6 +90,7 @@ mod test_digest {
         party::Party,
         prover::Prover,
         verifier::Verifier,
+        gadgets::prepare::generic_parse
     };
 
     use super::*;
@@ -97,8 +98,8 @@ mod test_digest {
     pub struct DigestCircuit;
 
     impl Circuit<u32> for DigestCircuit {
-        fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
-            assert_eq!(input.len(), 8);
+        fn compute(&self, input: &[u8]) -> Vec<GF2Word<u32>> {
+            let input = generic_parse(input, self.party_input_len());
             digest(&input.try_into().unwrap())
         }
 
@@ -108,14 +109,14 @@ mod test_digest {
             p2: &mut Party<u32>,
             p3: &mut Party<u32>,
         ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-            assert_eq!(p1.view.input.len(), self.party_input_len());
-            assert_eq!(p2.view.input.len(), self.party_input_len());
-            assert_eq!(p3.view.input.len(), self.party_input_len());
+            let p1_words = generic_parse(&p1.view.input, self.party_input_len());
+            let p2_words = generic_parse(&p2.view.input, self.party_input_len());
+            let p3_words = generic_parse(&p3.view.input, self.party_input_len());
 
             mpc_digest(
-                &p1.view.input.clone().try_into().unwrap(),
-                &p2.view.input.clone().try_into().unwrap(),
-                &p3.view.input.clone().try_into().unwrap(),
+                &p1_words.try_into().unwrap(),
+                &p2_words.try_into().unwrap(),
+                &p3_words.try_into().unwrap(),
                 p1,
                 p2,
                 p3,
@@ -127,12 +128,12 @@ mod test_digest {
             p: &mut Party<u32>,
             p_next: &mut Party<u32>,
         ) -> Result<(Output<u32>, Output<u32>), Error> {
-            assert_eq!(p.view.input.len(), self.party_input_len());
-            assert_eq!(p_next.view.input.len(), self.party_input_len());
+            let p_words = generic_parse(&p.view.input, self.party_input_len());
+            let p_next_words = generic_parse(&p_next.view.input, self.party_input_len());
 
             let (o1, o2) = mpc_digest_verify(
-                &p.view.input.clone().try_into().unwrap(),
-                &p_next.view.input.clone().try_into().unwrap(),
+                &p_words.try_into().unwrap(),
+                &p_next_words.try_into().unwrap(),
                 p,
                 p_next,
             );
@@ -157,13 +158,13 @@ mod test_digest {
     fn test_circuit() {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
-        let input: Vec<u8> = crate::gadgets::sha256::test_vectors::COMPRESSION_OUTPUT
+        let input: Vec<u8> = crate::gadgets::sha256::test_vectors::short::COMPRESSION_OUTPUT
         .iter().map(|v| v.to_le_bytes()).flatten().collect();
 
         let circuit = DigestCircuit;
 
-        let output = circuit.compute(&circuit.prepare(&input));
-        let expected_output = crate::gadgets::sha256::test_vectors::DIGEST_OUTPUT;
+        let output = circuit.compute(&input);
+        let expected_output = crate::gadgets::sha256::test_vectors::short::DIGEST_OUTPUT;
         for (&word, &expected_word) in output.iter().zip(expected_output.iter()) {
             assert_eq!(word.value, expected_word);
         }

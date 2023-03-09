@@ -84,7 +84,7 @@ mod test_ch {
         gf2_word::GF2Word,
         party::Party,
         prover::Prover,
-        verifier::Verifier,
+        verifier::Verifier, gadgets::prepare::generic_parse,
     };
 
     use super::*;
@@ -92,9 +92,9 @@ mod test_ch {
     pub struct ChCircuit;
 
     impl Circuit<u32> for ChCircuit {
-        fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
-            assert_eq!(input.len(), 3);
-            let res = ch(input[0].value, input[1].value, input[2].value);
+        fn compute(&self, input: &[u8]) -> Vec<GF2Word<u32>> {
+            let words = generic_parse(input, self.party_input_len());
+            let res = ch(words[0].value, words[1].value, words[2].value);
             vec![res.into()]
         }
 
@@ -104,13 +104,14 @@ mod test_ch {
             p2: &mut Party<u32>,
             p3: &mut Party<u32>,
         ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-            assert_eq!(p1.view.input.len(), 3);
-            assert_eq!(p2.view.input.len(), 3);
-            assert_eq!(p3.view.input.len(), 3);
+            let p1_words = generic_parse(&p1.view.input, self.party_input_len());
+            let p2_words = generic_parse(&p2.view.input, self.party_input_len());
+            let p3_words = generic_parse(&p3.view.input, self.party_input_len());
 
-            let input_p1 = (p1.view.input[0], p1.view.input[1], p1.view.input[2]);
-            let input_p2 = (p2.view.input[0], p2.view.input[1], p2.view.input[2]);
-            let input_p3 = (p3.view.input[0], p3.view.input[1], p3.view.input[2]);
+
+            let input_p1 = (p1_words[0], p1_words[1], p1_words[2]);
+            let input_p2 = (p2_words[0], p2_words[1], p2_words[2]);
+            let input_p3 = (p3_words[0], p3_words[1], p3_words[2]);
 
             let (o1, o2, o3) = mpc_ch(input_p1, input_p2, input_p3, p1, p2, p3);
             (vec![o1], vec![o2], vec![o3])
@@ -121,14 +122,14 @@ mod test_ch {
             p: &mut Party<u32>,
             p_next: &mut Party<u32>,
         ) -> Result<(Output<u32>, Output<u32>), Error> {
-            assert_eq!(p.view.input.len(), 3);
-            assert_eq!(p_next.view.input.len(), 3);
+            let p_words = generic_parse(&p.view.input, self.party_input_len());
+            let p_next_words = generic_parse(&p_next.view.input, self.party_input_len());
 
-            let input_p = (p.view.input[0], p.view.input[1], p.view.input[2]);
+            let input_p = (p_words[0], p_words[1], p_words[2]);
             let input_p_next = (
-                p_next.view.input[0],
-                p_next.view.input[1],
-                p_next.view.input[2],
+                p_next_words[0],
+                p_next_words[1],
+                p_next_words[2],
             );
 
             let (o1, o2) = ch_verify(input_p, input_p_next, p, p_next)?;
@@ -160,7 +161,7 @@ mod test_ch {
 
         let circuit = ChCircuit;
 
-        let output = circuit.compute(&circuit.prepare(&input));
+        let output = circuit.compute(&&input);
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng, &input, &circuit, &output,

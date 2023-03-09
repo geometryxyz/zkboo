@@ -23,7 +23,7 @@ where
         + GenRand,
 {
     offset: usize,
-    pub input: Vec<GF2Word<T>>,
+    pub input: Vec<u8>,
     pub messages: Vec<GF2Word<T>>,
 }
 
@@ -38,7 +38,7 @@ where
         + BytesUitls
         + GenRand,
 {
-    pub fn new(input: Vec<GF2Word<T>>) -> Self {
+    pub fn new(input: Vec<u8>) -> Self {
         Self {
             input,
             messages: vec![],
