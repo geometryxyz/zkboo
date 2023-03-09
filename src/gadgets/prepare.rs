@@ -1,6 +1,9 @@
-use std::{fmt::Display, ops::{BitAnd, BitXor}};
+use std::{
+    fmt::Display,
+    ops::{BitAnd, BitXor},
+};
 
-use crate::gf2_word::{GF2Word, BytesUitls, BitUtils, GenRand};
+use crate::gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand};
 
 pub fn generic_parse<T>(bytes: &[u8], number_of_words: usize) -> Vec<GF2Word<T>>
 where
@@ -14,5 +17,8 @@ where
         + GenRand,
 {
     assert_eq!(bytes.len(), number_of_words * T::bytes_len());
-    bytes.chunks(T::bytes_len()).map(|chunk| T::from_le_bytes(&chunk).into()).collect()
+    bytes
+        .chunks(T::bytes_len())
+        .map(|chunk| T::from_le_bytes(&chunk).into())
+        .collect()
 }

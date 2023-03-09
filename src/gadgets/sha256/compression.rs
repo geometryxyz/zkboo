@@ -83,13 +83,14 @@ pub fn mpc_compression(
     w_p1: &[GF2Word<u32>; 64],
     w_p2: &[GF2Word<u32>; 64],
     w_p3: &[GF2Word<u32>; 64],
+    (vars_1, vars_2, vars_3): &(WorkingVariables, WorkingVariables, WorkingVariables),
     p1: &mut Party<u32>,
     p2: &mut Party<u32>,
     p3: &mut Party<u32>,
 ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-    let mut variables_1 = init_iv();
-    let mut variables_2 = init_iv();
-    let mut variables_3 = init_iv();
+    let mut variables_1 = vars_1.clone();
+    let mut variables_2 = vars_2.clone();
+    let mut variables_3 = vars_3.clone();
 
     for i in 0..64 {
         // - S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)
@@ -201,11 +202,12 @@ pub fn mpc_compression(
 pub fn mpc_compression_verify(
     w_p: &[GF2Word<u32>; 64],
     w_p_next: &[GF2Word<u32>; 64],
+    (vars_p, vars_p_next): &(WorkingVariables, WorkingVariables),
     p: &mut Party<u32>,
     p_next: &mut Party<u32>,
 ) -> Result<(Vec<GF2Word<u32>>, Vec<GF2Word<u32>>), Error> {
-    let mut variables_p = init_iv();
-    let mut variables_p_next = init_iv();
+    let mut variables_p = vars_p.clone();
+    let mut variables_p_next = vars_p_next.clone();
 
     for i in 0..64 {
         // - ch  := (e and f) xor ((not e) and g)
@@ -302,6 +304,8 @@ pub fn mpc_compression_verify(
 #[cfg(test)]
 mod test_compression {
 
+    use std::env::var;
+
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
@@ -309,10 +313,11 @@ mod test_compression {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
+        gadgets::prepare::generic_parse,
         gf2_word::GF2Word,
         party::Party,
         prover::Prover,
-        verifier::Verifier, gadgets::prepare::generic_parse,
+        verifier::Verifier,
     };
 
     use super::*;
@@ -335,10 +340,15 @@ mod test_compression {
             let p2_words = generic_parse(&p2.view.input, self.party_input_len());
             let p3_words = generic_parse(&p3.view.input, self.party_input_len());
 
+            let variables_1 = init_iv();
+            let variables_2 = init_iv();
+            let variables_3 = init_iv();
+
             mpc_compression(
                 &p1_words.try_into().unwrap(),
-                &p2_words.clone().try_into().unwrap(),
-                &p3_words.clone().try_into().unwrap(),
+                &p2_words.try_into().unwrap(),
+                &p3_words.try_into().unwrap(),
+                &mut (variables_1, variables_2, variables_3),
                 p1,
                 p2,
                 p3,
@@ -353,9 +363,13 @@ mod test_compression {
             let p_words = generic_parse(&p.view.input, self.party_input_len());
             let p_next_words = generic_parse(&p_next.view.input, self.party_input_len());
 
+            let state_p = init_iv();
+            let state_p_next = init_iv();
+
             let (o1, o2) = mpc_compression_verify(
-                &p_words.clone().try_into().unwrap(),
-                &p_next_words.clone().try_into().unwrap(),
+                &p_words.try_into().unwrap(),
+                &p_next_words.try_into().unwrap(),
+                &(state_p, state_p_next),
                 p,
                 p_next,
             )?;
@@ -381,7 +395,12 @@ mod test_compression {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
 
-        let input: Vec<u8> = crate::gadgets::sha256::test_vectors::short::MSG_SCHEDULE_TEST_OUTPUT.iter().map(|&wi| wi.to_le_bytes()).into_iter().flatten().collect();
+        let input: Vec<u8> = crate::gadgets::sha256::test_vectors::short::MSG_SCHEDULE_TEST_OUTPUT
+            .iter()
+            .map(|&wi| wi.to_le_bytes())
+            .into_iter()
+            .flatten()
+            .collect();
 
         let circuit = CompressionCircuit;
 

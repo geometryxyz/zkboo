@@ -81,10 +81,11 @@ mod test_ch {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
+        gadgets::prepare::generic_parse,
         gf2_word::GF2Word,
         party::Party,
         prover::Prover,
-        verifier::Verifier, gadgets::prepare::generic_parse,
+        verifier::Verifier,
     };
 
     use super::*;
@@ -108,7 +109,6 @@ mod test_ch {
             let p2_words = generic_parse(&p2.view.input, self.party_input_len());
             let p3_words = generic_parse(&p3.view.input, self.party_input_len());
 
-
             let input_p1 = (p1_words[0], p1_words[1], p1_words[2]);
             let input_p2 = (p2_words[0], p2_words[1], p2_words[2]);
             let input_p3 = (p3_words[0], p3_words[1], p3_words[2]);
@@ -126,11 +126,7 @@ mod test_ch {
             let p_next_words = generic_parse(&p_next.view.input, self.party_input_len());
 
             let input_p = (p_words[0], p_words[1], p_words[2]);
-            let input_p_next = (
-                p_next_words[0],
-                p_next_words[1],
-                p_next_words[2],
-            );
+            let input_p_next = (p_next_words[0], p_next_words[1], p_next_words[2]);
 
             let (o1, o2) = ch_verify(input_p, input_p_next, p, p_next)?;
 
@@ -156,8 +152,13 @@ mod test_ch {
         const SIGMA: usize = 80;
 
         let input: Vec<u8> = [
-            381321u32.to_le_bytes(), 32131u32.to_le_bytes(), 328131u32.to_le_bytes()
-        ].into_iter().flatten().collect();
+            381321u32.to_le_bytes(),
+            32131u32.to_le_bytes(),
+            328131u32.to_le_bytes(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
 
         let circuit = ChCircuit;
 

@@ -280,7 +280,10 @@ mod adder_tests {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gadgets::{add_mod::{add_mod_verify_k, adder, mpc_add_mod_k}, prepare::generic_parse},
+        gadgets::{
+            add_mod::{add_mod_verify_k, adder, mpc_add_mod_k},
+            prepare::generic_parse,
+        },
         gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
         party::Party,
     };
@@ -342,8 +345,7 @@ mod adder_tests {
             let input_p = generic_parse(&p.view.input, self.party_input_len())[0];
             let input_p_next = generic_parse(&p_next.view.input, self.party_input_len())[0];
 
-            let (o1, o2) =
-                add_mod_verify_k(input_p, input_p_next, self.k, p, p_next);
+            let (o1, o2) = add_mod_verify_k(input_p, input_p_next, self.k, p, p_next);
             Ok((vec![o1], vec![o2]))
         }
 

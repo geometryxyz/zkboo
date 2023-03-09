@@ -98,11 +98,11 @@ mod test_temp1 {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
+        gadgets::prepare::generic_parse,
         gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
-        gadgets::prepare::generic_parse
     };
 
     use super::*;
@@ -130,18 +130,9 @@ mod test_temp1 {
             p2: &mut Party<u32>,
             p3: &mut Party<u32>,
         ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-            let words_p1 = generic_parse(
-                &p1.view.input,
-                self.party_input_len()
-            );
-            let words_p2 = generic_parse(
-                &p2.view.input,
-                self.party_input_len()
-            );
-            let words_p3 = generic_parse(
-                &p3.view.input,
-                self.party_input_len()
-            );
+            let words_p1 = generic_parse(&p1.view.input, self.party_input_len());
+            let words_p2 = generic_parse(&p2.view.input, self.party_input_len());
+            let words_p3 = generic_parse(&p3.view.input, self.party_input_len());
 
             let input_p1 = (words_p1[0], words_p1[1], words_p1[2], words_p1[3]);
             let input_p2 = (words_p2[0], words_p2[1], words_p2[2], words_p2[3]);
@@ -156,16 +147,15 @@ mod test_temp1 {
             p: &mut Party<u32>,
             p_next: &mut Party<u32>,
         ) -> Result<(Output<u32>, Output<u32>), Error> {
-            let words_p = generic_parse(
-                &p.view.input,
-                self.party_input_len()
-            );
-            let words_p_next = generic_parse(
-                &p_next.view.input,
-                self.party_input_len()
-            );
+            let words_p = generic_parse(&p.view.input, self.party_input_len());
+            let words_p_next = generic_parse(&p_next.view.input, self.party_input_len());
             let input_p = (words_p[0], words_p[1], words_p[2], words_p[3]);
-            let input_p_next = (words_p_next[0], words_p_next[1], words_p_next[2], words_p_next[3]);
+            let input_p_next = (
+                words_p_next[0],
+                words_p_next[1],
+                words_p_next[2],
+                words_p_next[3],
+            );
 
             let (o1, o2) = mpc_temp1_verify(input_p, input_p_next, self.k, p, p_next)?;
 
@@ -191,8 +181,14 @@ mod test_temp1 {
         const SIGMA: usize = 80;
 
         let input: Vec<u8> = [
-            381321u32.to_le_bytes(), 32131u32.to_le_bytes(), 328131u32.to_le_bytes(), 313123u32.to_le_bytes()
-        ].into_iter().flatten().collect();
+            381321u32.to_le_bytes(),
+            32131u32.to_le_bytes(),
+            328131u32.to_le_bytes(),
+            313123u32.to_le_bytes(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
 
         let circuit = Temp1Circuit {
             k: 131321u32.into(),

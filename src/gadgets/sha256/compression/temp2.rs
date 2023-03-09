@@ -45,11 +45,11 @@ mod test_temp2 {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
+        gadgets::prepare::generic_parse,
         gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
-        gadgets::prepare::generic_parse
     };
 
     use super::*;
@@ -115,9 +115,10 @@ mod test_temp2 {
         let mut rng = thread_rng();
         const SIGMA: usize = 80;
 
-        let input: Vec<u8> = [
-            381321u32.to_le_bytes(), 32131u32.to_le_bytes()
-        ].into_iter().flatten().collect();
+        let input: Vec<u8> = [381321u32.to_le_bytes(), 32131u32.to_le_bytes()]
+            .into_iter()
+            .flatten()
+            .collect();
 
         let circuit = Temp2Circuit;
 

@@ -69,10 +69,7 @@ where
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
     D: Debug + Default + Digest + FixedOutputReset,
 {
-    pub fn share<R: RngCore + CryptoRng>(
-        rng: &mut R,
-        input: &[u8],
-    ) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+    pub fn share<R: RngCore + CryptoRng>(rng: &mut R, input: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
         let share_1: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng).into()).collect();
         let share_2: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng).into()).collect();
 
@@ -178,7 +175,7 @@ where
         // TODO: remove hardcoded seed
         let mut fs_oracle = SigmaFS::<D>::initialize(&[0u8]);
         fs_oracle.digest_public_data(&pi)?;
-        // fs_oracle.digest_prover_message(&all_commitments)?;
+        fs_oracle.digest_prover_message(&all_commitments)?;
 
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
 

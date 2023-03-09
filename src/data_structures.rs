@@ -47,12 +47,20 @@ where
 {
     pub fn commit<D: Default + Digest>(&self) -> Result<Commitment<D>, Error> {
         let blinding = Blinding(self.key);
-        let messages_bytes: Vec<u8> = self.view.messages.iter().map(|msg| msg.value.to_bytes()).flatten().collect();
+        let messages_bytes: Vec<u8> = self
+            .view
+            .messages
+            .iter()
+            .map(|msg| msg.value.to_bytes())
+            .flatten()
+            .collect();
 
-        // TODO: consider more optimal way to prepare message for committing 
+        // TODO: consider more optimal way to prepare message for committing
         // we omit commiting to full view to make sure that offset is not included which is just helper variable
-        let commitment =
-            Commitment::<D>::commit(&blinding, &[self.view.input.clone(), messages_bytes].concat())?;
+        let commitment = Commitment::<D>::commit(
+            &blinding,
+            &[self.view.input.clone(), messages_bytes].concat(),
+        )?;
         Ok(commitment)
     }
 }

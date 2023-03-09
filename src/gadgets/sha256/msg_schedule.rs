@@ -148,10 +148,11 @@ mod test_msg_schedule {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
+        gadgets::prepare::generic_parse,
         gf2_word::GF2Word,
         party::Party,
         prover::Prover,
-        verifier::Verifier, gadgets::prepare::generic_parse,
+        verifier::Verifier,
     };
 
     use super::*;
@@ -203,7 +204,6 @@ mod test_msg_schedule {
 
             Ok((o1.to_vec(), o2.to_vec()))
         }
-
 
         fn party_input_len(&self) -> usize {
             16

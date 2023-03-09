@@ -1,9 +1,7 @@
 use crate::gf2_word::GF2Word;
 use std::iter;
 
-pub fn padding(
-    input: &[u8]
-) -> Vec<GF2Word<u32>> {
+pub fn padding(input: &[u8]) -> Vec<GF2Word<u32>> {
     let mut msg = input.to_vec();
     let length_u64 = (8 * input.len()) as u64; // msg len in bits
     msg.push(0x80); // append one 1 bit and seven 0 bits
@@ -14,14 +12,15 @@ pub fn padding(
     msg.extend_from_slice(&length_u64.to_be_bytes());
 
     assert!(msg.len() * 8 % 512 == 0);
-    msg.chunks(4).map(|chunk| u32::from_be_bytes(chunk.try_into().unwrap()).into()).collect()
+    msg.chunks(4)
+        .map(|chunk| u32::from_be_bytes(chunk.try_into().unwrap()).into())
+        .collect()
 }
 
-
-#[cfg(test)] 
+#[cfg(test)]
 mod test_padding {
-    use crate::gadgets::sha256::test_vectors::short::TEST_INPUT as SHORT_TEST;
     use crate::gadgets::sha256::test_vectors::long::TEST_INPUT as LONG_TEST;
+    use crate::gadgets::sha256::test_vectors::short::TEST_INPUT as SHORT_TEST;
 
     use super::padding;
     #[test]
@@ -32,7 +31,7 @@ mod test_padding {
             assert_eq!(word.value, expected_word);
         }
     }
-    
+
     #[test]
     fn long_padding() {
         let input = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu".as_bytes();
