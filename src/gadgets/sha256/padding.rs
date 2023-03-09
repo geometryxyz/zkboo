@@ -1,5 +1,5 @@
 use crate::gf2_word::GF2Word;
-use std::iter;
+
 
 pub fn padding(input: &[u8]) -> Vec<GF2Word<u32>> {
     let mut msg = input.to_vec();
@@ -26,7 +26,7 @@ mod test_padding {
     #[test]
     fn short_padding() {
         let input = "abc".as_bytes();
-        let padded_input = padding(&input);
+        let padded_input = padding(input);
         for (&word, &expected_word) in padded_input.iter().zip(SHORT_TEST.iter()) {
             assert_eq!(word.value, expected_word);
         }
@@ -35,7 +35,7 @@ mod test_padding {
     #[test]
     fn long_padding() {
         let input = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu".as_bytes();
-        let padded_input = padding(&input);
+        let padded_input = padding(input);
         for (&word, &expected_word) in padded_input.iter().zip(LONG_TEST.iter()) {
             assert_eq!(word.value, expected_word);
         }

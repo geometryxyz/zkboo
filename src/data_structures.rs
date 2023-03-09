@@ -51,8 +51,7 @@ where
             .view
             .messages
             .iter()
-            .map(|msg| msg.value.to_bytes())
-            .flatten()
+            .flat_map(|msg| msg.value.to_bytes())
             .collect();
 
         // TODO: consider more optimal way to prepare message for committing

@@ -70,8 +70,8 @@ where
     D: Debug + Default + Digest + FixedOutputReset,
 {
     pub fn share<R: RngCore + CryptoRng>(rng: &mut R, input: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
-        let share_1: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng).into()).collect();
-        let share_2: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng).into()).collect();
+        let share_1: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng)).collect();
+        let share_2: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng)).collect();
 
         let share_3: Vec<u8> = input
             .iter()

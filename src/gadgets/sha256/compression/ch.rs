@@ -162,7 +162,7 @@ mod test_ch {
 
         let circuit = ChCircuit;
 
-        let output = circuit.compute(&&input);
+        let output = circuit.compute(&input);
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng, &input, &circuit, &output,

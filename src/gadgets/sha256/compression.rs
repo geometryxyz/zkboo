@@ -88,9 +88,9 @@ pub fn mpc_compression(
     p2: &mut Party<u32>,
     p3: &mut Party<u32>,
 ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-    let mut variables_1 = vars_1.clone();
-    let mut variables_2 = vars_2.clone();
-    let mut variables_3 = vars_3.clone();
+    let mut variables_1 = *vars_1;
+    let mut variables_2 = *vars_2;
+    let mut variables_3 = *vars_3;
 
     for i in 0..64 {
         // - S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)
@@ -206,8 +206,8 @@ pub fn mpc_compression_verify(
     p: &mut Party<u32>,
     p_next: &mut Party<u32>,
 ) -> Result<(Vec<GF2Word<u32>>, Vec<GF2Word<u32>>), Error> {
-    let mut variables_p = vars_p.clone();
-    let mut variables_p_next = vars_p_next.clone();
+    let mut variables_p = *vars_p;
+    let mut variables_p_next = *vars_p_next;
 
     for i in 0..64 {
         // - ch  := (e and f) xor ((not e) and g)
@@ -304,7 +304,7 @@ pub fn mpc_compression_verify(
 #[cfg(test)]
 mod test_compression {
 
-    use std::env::var;
+    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;

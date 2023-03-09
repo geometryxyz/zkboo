@@ -113,7 +113,7 @@ mod test_temp1 {
 
     impl Circuit<u32> for Temp1Circuit {
         fn compute(&self, input: &[u8]) -> Vec<GF2Word<u32>> {
-            let input = generic_parse(&input, self.num_of_mul_gates());
+            let input = generic_parse(input, self.num_of_mul_gates());
             let res = temp1(
                 input[0].value,
                 input[1].value,

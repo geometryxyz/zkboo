@@ -178,8 +178,7 @@ mod test_digest {
         const SIGMA: usize = 80;
         let input: Vec<u8> = crate::gadgets::sha256::test_vectors::short::COMPRESSION_OUTPUT
             .iter()
-            .map(|v| v.to_le_bytes())
-            .flatten()
+            .flat_map(|v| v.to_le_bytes())
             .collect();
 
         let circuit = DigestCircuit;

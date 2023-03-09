@@ -383,7 +383,7 @@ mod test_sha256 {
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng,
-            &preimage.as_bytes(),
+            preimage.as_bytes(),
             &circuit,
             &output,
         )
@@ -411,7 +411,7 @@ mod test_sha256 {
 
         let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
             &mut rng,
-            &preimage.as_bytes(),
+            preimage.as_bytes(),
             &circuit,
             &output,
         )

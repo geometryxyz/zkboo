@@ -19,6 +19,6 @@ where
     assert_eq!(bytes.len(), number_of_words * T::bytes_len());
     bytes
         .chunks(T::bytes_len())
-        .map(|chunk| T::from_le_bytes(&chunk).into())
+        .map(|chunk| T::from_le_bytes(chunk).into())
         .collect()
 }

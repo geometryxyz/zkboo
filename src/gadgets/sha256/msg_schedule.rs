@@ -224,8 +224,7 @@ mod test_msg_schedule {
         const SIGMA: usize = 80;
         let input: Vec<u8> = crate::gadgets::sha256::test_vectors::short::TEST_INPUT
             .iter()
-            .map(|&vi| vi.to_le_bytes())
-            .flatten()
+            .flat_map(|&vi| vi.to_le_bytes())
             .collect();
 
         let circuit = MsgScheduleCircuit;
