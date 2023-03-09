@@ -1,12 +1,10 @@
 // (a and b) xor (a and c) xor (b and c)
 // = (a xor b) and (a xor c) xor a
 
-
-
 use crate::{
     error::Error,
     gadgets::{mpc_and, mpc_and_verify},
-    gf2_word::{GF2Word},
+    gf2_word::GF2Word,
     party::Party,
 };
 
@@ -83,7 +81,6 @@ pub fn maj_verify(
 
 #[cfg(test)]
 mod test_maj {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -92,7 +89,7 @@ mod test_maj {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,

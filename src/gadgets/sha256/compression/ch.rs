@@ -2,12 +2,10 @@
 //      = e and (f xor g) xor g
 //      = lhs xor g
 
-
-
 use crate::{
     error::Error,
     gadgets::{mpc_and, mpc_and_verify},
-    gf2_word::{GF2Word},
+    gf2_word::GF2Word,
     party::Party,
 };
 
@@ -75,7 +73,6 @@ pub fn ch_verify(
 
 #[cfg(test)]
 mod test_ch {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -84,7 +81,7 @@ mod test_ch {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,

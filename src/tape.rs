@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// A tape of values that can be read at its current `offset`.
-pub struct Tape<T>
+pub struct Tape<T, const TAPE_LEN: usize>
 where
     T: Copy
         + Default
@@ -23,10 +23,10 @@ where
         + GenRand,
 {
     offset: usize,
-    tape: Vec<GF2Word<T>>,
+    tape: [GF2Word<T>; TAPE_LEN],
 }
 
-impl<T> Tape<T>
+impl<T, const TAPE_LEN: usize> Tape<T, TAPE_LEN>
 where
     T: Copy
         + Default
@@ -38,26 +38,23 @@ where
         + GenRand,
 {
     /// Initialise a tape with `len` entries using `key` as random seed.
-    pub fn from_key<R: SeedableRng<Seed = Key> + RngCore + CryptoRng>(
-        key: Key,
-        len: usize,
-    ) -> Self {
+    pub fn from_key<R: SeedableRng<Seed = Key> + RngCore + CryptoRng>(key: Key) -> Self {
         let mut rng = R::from_seed(key);
-        let mut tape = Vec::with_capacity(len);
+        let mut tape = vec![T::zero(); TAPE_LEN];
 
-        for _ in 0..len {
-            tape.push(T::gen_rand(&mut rng).into());
-        }
+        let tape = (0..TAPE_LEN)
+            .iter()
+            .map(|| T::gen_rand(&mut rng).into())
+            .try_into()
+            .unwrap();
 
         Self { offset: 0, tape }
     }
 
     /// Read the next value on the tape.
-    /// TODO: Return error if tape runs out of values.
     pub fn read_next(&mut self) -> GF2Word<T> {
         let ri = self.tape[self.offset];
         self.offset += 1;
-        assert!(self.offset <= self.tape.len());
         ri
     }
 }

@@ -285,8 +285,6 @@ mod adder_tests {
         party::Party,
     };
 
-    
-
     pub struct AddModKCircuit<T>
     where
         T: Copy
@@ -320,6 +318,10 @@ mod adder_tests {
             assert_eq!(input.len(), 1);
             let res = adder(input[0].value, self.k.value);
             vec![res.into()]
+        }
+
+        fn prepare(&self, witness: &[u8]) -> Vec<GF2Word<T>> {
+            assert_eq!(witness.len(), 1 * T::bytes_len());
         }
 
         fn compute_23_decomposition(
@@ -368,7 +370,7 @@ mod adder_tests {
         use rand_chacha::ChaCha20Rng;
         use sha3::Keccak256;
 
-        use crate::{circuit::Circuit, gf2_word::GF2Word, prover::Prover, verifier::Verifier};
+        use crate::{circuit::Circuit, prover::Prover, verifier::Verifier};
 
         use super::AddModKCircuit;
 
@@ -376,13 +378,13 @@ mod adder_tests {
         fn test_circuit() {
             let mut rng = thread_rng();
             const SIGMA: usize = 80;
-            let input: Vec<GF2Word<u32>> = [4294u32].iter().map(|&vi| vi.into()).collect();
+            let input = 4294u32.to_le_bytes();
 
             let circuit = AddModKCircuit::<u32> {
                 k: 3490903u32.into(),
             };
 
-            let output = circuit.compute(&input);
+            let output = circuit.compute(&circuit.prepare(&input));
 
             let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
                 &mut rng, &input, &circuit, &output,

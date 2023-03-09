@@ -11,7 +11,7 @@ use crate::gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand};
 /// - input: the party's initial share of the witness; and
 /// - messages: the messages sent to the party.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct View<T>
+pub struct View<T, const INPUT_LEN: usize, const MSG_LEN: usize>
 where
     T: Copy
         + Default
@@ -22,12 +22,13 @@ where
         + BytesInfo
         + GenRand,
 {
-    offset: usize,
-    pub input: Vec<GF2Word<T>>,
-    pub messages: Vec<GF2Word<T>>,
+    read_offset: usize,
+    write_offset: usize,
+    pub input: [GF2Word<T>; INPUT_LEN],
+    pub messages: [GF2Word<T>; MSG_LEN],
 }
 
-impl<T> View<T>
+impl<T, const INPUT_LEN: usize, const MSG_LEN: usize> View<T, INPUT_LEN, MSG_LEN>
 where
     T: Copy
         + Default
@@ -38,22 +39,24 @@ where
         + BytesInfo
         + GenRand,
 {
-    pub fn new(input: Vec<GF2Word<T>>) -> Self {
+    pub fn new(input: [GF2Word<T>; INPUT_LEN]) -> Self {
         Self {
             input,
-            messages: vec![],
-            offset: 0,
+            messages: [T::zero().into(); MSG_LEN],
+            read_offset: 0,
+            write_offset: 0,
         }
     }
 
     pub fn send_msg(&mut self, msg: GF2Word<T>) {
-        self.messages.push(msg);
+        self.messages[self.write_offset] = msg;
+        self.write_offset += 1;
     }
 
     /// Read the message at the current `offset`.
     pub fn read_next(&mut self) -> GF2Word<T> {
         let msg_i = self.messages[self.offset];
-        self.offset += 1;
+        self.read_offset += 1;
         msg_i
     }
 }

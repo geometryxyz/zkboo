@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// A party in the MPC protocol has a random tape and a `View`.
-pub struct Party<T>
+pub struct Party<T, const INPUT_LEN: usize, const TAPE_LEN: usize>
 where
     T: Copy
         + Default
@@ -24,11 +24,11 @@ where
         + BytesInfo
         + GenRand,
 {
-    pub tape: Tape<T>,
-    pub view: View<T>,
+    pub tape: Tape<T, TAPE_LEN>,
+    pub view: View<T, INPUT_LEN, TAPE_LEN>,
 }
 
-impl<T> Party<T>
+impl<T, const INPUT_LEN: usize, const TAPE_LEN: usize> Party<T, INPUT_LEN, TAPE_LEN>
 where
     T: Copy
         + Default
@@ -44,13 +44,13 @@ where
         k: Key,
         tape_len: usize,
     ) -> Self {
-        let tape = Tape::<T>::from_key::<TapeR>(k, tape_len);
+        let tape = Tape::<T, TAPE_LEN>::from_key::<TapeR>(k);
         let view = View::new(share);
 
         Self { view, tape }
     }
 
-    pub fn from_tape_and_view(view: View<T>, tape: Tape<T>) -> Self {
+    pub fn from_tape_and_view(view: View<T, INPUT_LEN, TAPE_LEN>, tape: Tape<T, TAPE_LEN>) -> Self {
         Self { tape, view }
     }
 

@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    circuit::{Circuit, TwoThreeDecOutput},
+    circuit::Circuit,
     commitment::Commitment,
     config::HASH_LEN,
     data_structures::{PartyExecution, Proof, PublicInput},
@@ -115,17 +115,19 @@ where
 
     pub fn prove<R: RngCore + CryptoRng, const SIGMA: usize>(
         rng: &mut R,
-        input: &Vec<GF2Word<T>>,
+        input: &[u8],
         circuit: &impl Circuit<T>,
         public_output: &Vec<GF2Word<T>>,
     ) -> Result<Proof<T, D, SIGMA>, Error> {
         let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
 
         let mut key_manager = KeyManager::new(num_of_repetitions, rng);
-
         let mut outputs = Vec::<Vec<GF2Word<T>>>::with_capacity(3 * num_of_repetitions);
         let mut all_commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
         let mut all_views = Vec::with_capacity(3 * num_of_repetitions);
+
+        // call prepare on circuit
+        let input = circuit.prepare(input);
 
         for _ in 0..num_of_repetitions {
             let k1 = key_manager.request_key();

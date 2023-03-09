@@ -6,7 +6,6 @@ use crate::{
     gf2_word::{BitUtils, GF2Word},
 };
 
-
 /// s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
 fn s0(i: usize, w: &[GF2Word<u32>]) -> GF2Word<u32> {
     (w[i - 15].value.right_rotate(7)
@@ -141,7 +140,6 @@ pub fn mpc_msg_schedule_verify(
 
 #[cfg(test)]
 mod test_msg_schedule {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -150,7 +148,7 @@ mod test_msg_schedule {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,

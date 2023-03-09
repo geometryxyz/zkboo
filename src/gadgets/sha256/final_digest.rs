@@ -78,7 +78,6 @@ pub fn mpc_digest_verify(
 
 #[cfg(test)]
 mod test_digest {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -87,7 +86,7 @@ mod test_digest {
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,

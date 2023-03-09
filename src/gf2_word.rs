@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub trait BytesInfo {
     fn to_bytes(&self) -> Vec<u8>;
     fn bytes_len() -> usize;
+    fn from_le_bytes(bytes: &[u8]) -> Self;
 }
 
 pub trait GenRand {
@@ -114,6 +115,11 @@ impl BytesInfo for u8 {
     fn bytes_len() -> usize {
         1
     }
+
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        assert_eq!(bytes.len(), Self::bytes_len());
+        bytes[0]
+    }
 }
 
 impl GenRand for u8 {
@@ -138,6 +144,10 @@ impl BytesInfo for u32 {
     fn bytes_len() -> usize {
         4
     }
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        assert_eq!(bytes.len(), Self::bytes_len());
+        Self::from_le_bytes(bytes.try_into().unwrap())
+    }
 }
 
 impl GenRand for u32 {
@@ -159,6 +169,10 @@ impl BytesInfo for u64 {
     }
     fn bytes_len() -> usize {
         8
+    }
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        assert_eq!(bytes.len(), Self::bytes_len());
+        Self::from_le_bytes(bytes.try_into().unwrap())
     }
 }
 
@@ -182,6 +196,10 @@ impl BytesInfo for u128 {
     fn bytes_len() -> usize {
         16
     }
+    fn from_le_bytes(bytes: &[u8]) -> Self {
+        assert_eq!(bytes.len(), Self::bytes_len());
+        Self::from_le_bytes(bytes.try_into().unwrap())
+    }
 }
 
 impl GenRand for u128 {
@@ -204,6 +222,15 @@ where
     pub size: usize,
 }
 
+impl<T> From<Vec<T>> for GF2Word<T>
+where
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
+{
+    fn from(vec: Vec<T>) -> Vec<Self> {
+        vec.into_iter().map(|v| v.into()).collect()
+    }
+}
+
 impl<T> From<T> for GF2Word<T>
 where
     T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
@@ -215,6 +242,7 @@ where
         }
     }
 }
+
 impl<T> BitAnd for GF2Word<T>
 where
     T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,

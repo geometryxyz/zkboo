@@ -4,10 +4,14 @@ mod iv;
 mod msg_schedule;
 mod test_vectors;
 
-use crate::{gf2_word::GF2Word, party::Party, error::Error};
+use crate::{error::Error, gf2_word::GF2Word, party::Party};
 use std::ops::Deref;
 
-use self::{msg_schedule::{mpc_msg_schedule, mpc_msg_schedule_verify}, compression::{mpc_compression, mpc_compression_verify}, final_digest::{mpc_digest, mpc_digest_verify}};
+use self::{
+    compression::{mpc_compression, mpc_compression_verify},
+    final_digest::{mpc_digest, mpc_digest_verify},
+    msg_schedule::{mpc_msg_schedule, mpc_msg_schedule_verify},
+};
 
 /// TODO: Doc
 #[derive(Debug)]
@@ -107,50 +111,67 @@ impl Deref for H {
 }
 
 pub fn mpc_sha256(
-    input_p1: &[GF2Word<u32>; 16], 
-    input_p2: &[GF2Word<u32>; 16], 
-    input_p3: &[GF2Word<u32>; 16], 
+    input_p1: &[GF2Word<u32>; 16],
+    input_p2: &[GF2Word<u32>; 16],
+    input_p3: &[GF2Word<u32>; 16],
     p1: &mut Party<u32>,
     p2: &mut Party<u32>,
     p3: &mut Party<u32>,
 ) -> (Vec<GF2Word<u32>>, Vec<GF2Word<u32>>, Vec<GF2Word<u32>>) {
-    let (msg_schedule_1, msg_schedule_2, msg_schedule_3) = mpc_msg_schedule(input_p1, input_p2, input_p3, p1, p2, p3);
+    let (msg_schedule_1, msg_schedule_2, msg_schedule_3) =
+        mpc_msg_schedule(input_p1, input_p2, input_p3, p1, p2, p3);
 
     let (compression_output_1, compression_output_2, compression_output_3) = mpc_compression(
-        &msg_schedule_1, &msg_schedule_2, &msg_schedule_3, p1, p2, p3
+        &msg_schedule_1,
+        &msg_schedule_2,
+        &msg_schedule_3,
+        p1,
+        p2,
+        p3,
     );
 
-    mpc_digest(&compression_output_1.try_into().unwrap(), &compression_output_2.try_into().unwrap(), &compression_output_3.try_into().unwrap(), p1, p2, p3)
+    mpc_digest(
+        &compression_output_1.try_into().unwrap(),
+        &compression_output_2.try_into().unwrap(),
+        &compression_output_3.try_into().unwrap(),
+        p1,
+        p2,
+        p3,
+    )
 }
 
 pub fn mpc_sha256_verify(
-    input_p: &[GF2Word<u32>; 16], 
-    input_p_next: &[GF2Word<u32>; 16], 
+    input_p: &[GF2Word<u32>; 16],
+    input_p_next: &[GF2Word<u32>; 16],
     p: &mut Party<u32>,
     p_next: &mut Party<u32>,
 ) -> Result<(Vec<GF2Word<u32>>, Vec<GF2Word<u32>>), Error> {
-    let (msg_schedule_p, msg_schedule_p_next) = mpc_msg_schedule_verify(input_p, input_p_next, p, p_next);
+    let (msg_schedule_p, msg_schedule_p_next) =
+        mpc_msg_schedule_verify(input_p, input_p_next, p, p_next);
 
-    let (compression_output_p, compression_output_p_next) = mpc_compression_verify(
-        &msg_schedule_p, &msg_schedule_p_next, p, p_next
-    )?;
+    let (compression_output_p, compression_output_p_next) =
+        mpc_compression_verify(&msg_schedule_p, &msg_schedule_p_next, p, p_next)?;
 
-    Ok(mpc_digest_verify(&compression_output_p.try_into().unwrap(), &compression_output_p_next.try_into().unwrap(), p, p_next))
+    Ok(mpc_digest_verify(
+        &compression_output_p.try_into().unwrap(),
+        &compression_output_p_next.try_into().unwrap(),
+        p,
+        p_next,
+    ))
 }
 
 #[cfg(test)]
 mod test_sha256 {
-    
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
-    use sha3::Keccak256;
     use sha2::{Digest, Sha256};
+    use sha3::Keccak256;
 
     use crate::{
         circuit::{Circuit, Output},
         error::Error,
-        gf2_word::{GF2Word},
+        gf2_word::GF2Word,
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -159,10 +180,10 @@ mod test_sha256 {
     use super::*;
 
     pub struct Sha256Circuit {
-        preimage: String
+        preimage: String,
     }
 
-    impl Circuit<u32> for Sha256Circuit {
+    impl Circuit<16, 8, 728, u32> for Sha256Circuit {
         fn compute(&self, input: &[GF2Word<u32>]) -> Vec<GF2Word<u32>> {
             assert_eq!(input.len(), 0);
             // create a Sha256 object
@@ -221,18 +242,6 @@ mod test_sha256 {
 
             Ok((o1.to_vec(), o2.to_vec()))
         }
-
-        fn party_output_len(&self) -> usize {
-            8
-        }
-
-        fn num_of_mul_gates(&self) -> usize {
-            let msg_schedule = 3 * 48;
-            let compression = 9 * 64;
-            let digest = 8;
-            
-            msg_schedule + compression + digest
-        }
     }
 
     #[test]
@@ -245,7 +254,7 @@ mod test_sha256 {
             .collect();
 
         let circuit = Sha256Circuit {
-            preimage: String::from("abc")
+            preimage: String::from("abc"),
         };
 
         let output = circuit.compute(&[]);
