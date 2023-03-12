@@ -3,32 +3,17 @@ pub mod prepare;
 pub mod sha256;
 pub mod verifier;
 
-use std::{
-    fmt::{Debug, Display},
-    ops::{BitAnd, BitXor},
-};
-
 use crate::{
     error::Error,
-    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+    gf2_word::{GF2Word, Value},
     party::Party,
 };
 
-pub fn mpc_xor<T>(
+pub fn mpc_xor<T: Value>(
     input_p1: (GF2Word<T>, GF2Word<T>),
     input_p2: (GF2Word<T>, GF2Word<T>),
     input_p3: (GF2Word<T>, GF2Word<T>),
-) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>) {
     let output_p1 = input_p1.0 ^ input_p1.1;
     let output_p2 = input_p2.0 ^ input_p2.1;
     let output_p3 = input_p3.0 ^ input_p3.1;
@@ -36,24 +21,14 @@ where
     (output_p1, output_p2, output_p3)
 }
 
-pub fn mpc_and<T>(
+pub fn mpc_and<T: Value>(
     input_p1: (GF2Word<T>, GF2Word<T>),
     input_p2: (GF2Word<T>, GF2Word<T>),
     input_p3: (GF2Word<T>, GF2Word<T>),
     p1: &mut Party<T>,
     p2: &mut Party<T>,
     p3: &mut Party<T>,
-) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>) {
     let r1 = p1.read_tape();
     let r2 = p2.read_tape();
     let r3 = p3.read_tape();
@@ -78,24 +53,12 @@ where
     (output_p1, output_p2, output_p3)
 }
 
-pub fn mpc_and_verify<T>(
+pub fn mpc_and_verify<T: Value>(
     input_p: (GF2Word<T>, GF2Word<T>),
     input_p_next: (GF2Word<T>, GF2Word<T>),
     p: &mut Party<T>,
     p_next: &mut Party<T>,
-) -> Result<(GF2Word<T>, GF2Word<T>), Error>
-where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand
-        + PartialEq,
-{
+) -> Result<(GF2Word<T>, GF2Word<T>), Error> {
     let ri = p.read_tape();
     let ri_next = p_next.read_tape();
 

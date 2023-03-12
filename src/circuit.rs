@@ -1,30 +1,13 @@
-use std::{
-    fmt::{Debug, Display},
-    ops::{BitAnd, BitXor},
-};
-
 use crate::{
     error::Error,
-    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+    gf2_word::{GF2Word, Value},
     party::Party,
 };
 
 pub type Output<T> = Vec<GF2Word<T>>;
 pub type TwoThreeDecOutput<T> = (Output<T>, Output<T>, Output<T>);
 
-pub trait Circuit<T>
-where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + PartialEq
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+pub trait Circuit<T: Value> {
     fn compute(&self, input: &[u8]) -> Vec<GF2Word<T>>;
 
     /// Decompose this circuit into 3 branches such that the values computed in
@@ -47,11 +30,7 @@ where
 
 #[cfg(test)]
 mod circuit_tests {
-    use std::{
-        fmt::{Debug, Display},
-        marker::PhantomData,
-        ops::{BitAnd, BitXor},
-    };
+    use std::marker::PhantomData;
 
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
@@ -61,7 +40,7 @@ mod circuit_tests {
     use crate::{
         error::Error,
         gadgets::{mpc_and, mpc_and_verify, mpc_xor, prepare::generic_parse},
-        gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+        gf2_word::{GF2Word, Value},
         party::Party,
         prover::Prover,
         verifier::Verifier,
@@ -71,19 +50,7 @@ mod circuit_tests {
     #[derive(Clone, Copy)]
     struct SimpleCircuit1<T>(PhantomData<T>);
 
-    impl<T> Circuit<T> for SimpleCircuit1<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesUitls
-            + GenRand,
-    {
+    impl<T: Value> Circuit<T> for SimpleCircuit1<T> {
         fn compute(&self, input: &[u8]) -> Vec<GF2Word<T>> {
             let x = generic_parse(input, self.party_input_len());
             vec![(x[0] ^ x[1]) & (x[2] ^ x[3]) & x[4]]

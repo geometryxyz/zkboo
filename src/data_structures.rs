@@ -1,31 +1,16 @@
-use std::{
-    fmt::Display,
-    ops::{BitAnd, BitXor},
-};
-
 use serde::Serialize;
 use sha3::Digest;
 
 use crate::{
     commitment::{Blinding, Commitment},
     error::Error,
-    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+    gf2_word::{GF2Word, Value},
     key::Key,
     view::View,
 };
 
 #[derive(Serialize)]
-pub struct PartyExecution<'a, T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+pub struct PartyExecution<'a, T: Value> {
     pub key: &'a Key,
     pub view: &'a View<T>,
 }
@@ -33,18 +18,7 @@ where
 /*
    Based on: O4 of (https://eprint.iacr.org/2017/279.pdf)
 */
-impl<'a, T> PartyExecution<'a, T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand
-        + Serialize,
-{
+impl<'a, T: Value> PartyExecution<'a, T> {
     pub fn commit<D: Default + Digest>(&self) -> Result<Commitment<D>, Error> {
         let blinding = Blinding(self.key);
         let messages_bytes: Vec<u8> = self
@@ -65,18 +39,7 @@ where
 }
 
 #[derive(Serialize)]
-pub struct PublicInput<'a, T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand
-        + Serialize,
-{
+pub struct PublicInput<'a, T: Value> {
     pub hash_len: usize,
     pub security_param: usize,
     pub public_output: &'a Vec<GF2Word<T>>,
@@ -84,17 +47,8 @@ where
 }
 
 // TODO: add methods for computing proofs size, etc.
-pub struct Proof<T, D, const SIGMA: usize>
+pub struct Proof<T: Value, D, const SIGMA: usize>
 where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand
-        + Serialize,
     D: Default + Digest,
 {
     pub party_inputs: Vec<Vec<u8>>,

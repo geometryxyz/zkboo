@@ -3,23 +3,13 @@
 //! This is used to derive verifier opening queries non-interactively, after the
 //! prover commits to all its views.
 
-use serde::Serialize;
 use sha3::{
     digest::{FixedOutputReset, OutputSizeUser},
     Digest,
 };
-use std::{
-    fmt::Display,
-    marker::PhantomData,
-    ops::{BitAnd, BitXor},
-};
+use std::marker::PhantomData;
 
-use crate::{
-    commitment::Commitment,
-    data_structures::PublicInput,
-    error::Error,
-    gf2_word::{BitUtils, BytesUitls, GenRand},
-};
+use crate::{commitment::Commitment, data_structures::PublicInput, error::Error, gf2_word::Value};
 
 pub struct SigmaProtocolStatelessFiatShamir<D: Clone + Digest>(PhantomData<D>);
 
@@ -78,18 +68,7 @@ impl<D: Default + Digest + FixedOutputReset> SigmaFS<D> {
         Self { hasher }
     }
 
-    pub fn digest_public_data<T>(&mut self, pi: &PublicInput<T>) -> Result<(), Error>
-    where
-        T: Copy
-            + Default
-            + Display
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesUitls
-            + GenRand
-            + Serialize,
-    {
+    pub fn digest_public_data<T: Value>(&mut self, pi: &PublicInput<T>) -> Result<(), Error> {
         let data = bincode::serialize(pi).map_err(|_| Error::SerializationError)?;
         Digest::update(&mut self.hasher, &data);
         Ok(())
