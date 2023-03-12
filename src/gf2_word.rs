@@ -6,7 +6,7 @@ use std::{
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
 
-pub trait BytesUitls {
+pub trait BytesUtils {
     fn to_bytes(&self) -> Vec<u8>;
     fn bytes_len() -> usize;
     fn from_le_bytes(le_bytes: &[u8]) -> Self;
@@ -38,7 +38,7 @@ pub trait Value:
     + BitAnd<Output = Self>
     + BitXor<Output = Self>
     + BitUtils
-    + BytesUitls
+    + BytesUtils
     + GenRand
     + Serialize
 {
@@ -122,7 +122,7 @@ impl BitUtils for u8 {
     }
 }
 
-impl BytesUitls for u8 {
+impl BytesUtils for u8 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
@@ -152,7 +152,7 @@ impl BitUtils for u32 {
     }
 }
 
-impl BytesUitls for u32 {
+impl BytesUtils for u32 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
@@ -181,7 +181,7 @@ impl BitUtils for u64 {
     }
 }
 
-impl BytesUitls for u64 {
+impl BytesUtils for u64 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
@@ -208,7 +208,7 @@ impl BitUtils for u128 {
     }
 }
 
-impl BytesUitls for u128 {
+impl BytesUtils for u128 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
