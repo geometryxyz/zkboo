@@ -14,6 +14,8 @@ use self::{
     final_digest::{mpc_update_state, mpc_update_state_verify},
     msg_schedule::{mpc_msg_schedule, mpc_msg_schedule_verify},
 };
+pub use iv::init_iv;
+pub use padding::padding;
 
 /// TODO: Doc
 #[derive(Debug, Clone, Copy)]

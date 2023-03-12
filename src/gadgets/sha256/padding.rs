@@ -1,6 +1,5 @@
 use crate::gf2_word::GF2Word;
 
-
 pub fn padding(input: &[u8]) -> Vec<GF2Word<u32>> {
     let mut msg = input.to_vec();
     let length_u64 = (8 * input.len()) as u64; // msg len in bits

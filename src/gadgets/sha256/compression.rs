@@ -304,8 +304,6 @@ pub fn mpc_compression_verify(
 #[cfg(test)]
 mod test_compression {
 
-    
-
     use rand::{rngs::ThreadRng, thread_rng};
     use rand_chacha::ChaCha20Rng;
     use sha3::Keccak256;
