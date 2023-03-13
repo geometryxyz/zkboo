@@ -1,7 +1,8 @@
-use std::marker::PhantomData;
+use std::{fmt::Debug, iter, marker::PhantomData};
 
 use rand::{CryptoRng, RngCore, SeedableRng};
 
+use rayon::prelude::*;
 use sha3::{digest::FixedOutputReset, Digest};
 
 use crate::{
@@ -27,98 +28,114 @@ impl<T, TapeR, D> Verifier<T, TapeR, D>
 where
     T: Value + PartialEq,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Clone + Default + Digest + FixedOutputReset,
+    D: Clone + Debug + Default + Digest + FixedOutputReset + Send,
 {
     pub fn verify<const SIGMA: usize>(
-        proof: &Proof<T, D, SIGMA>,
+        proofs: Vec<Proof<T, D, SIGMA>>,
         circuit: &impl Circuit<T>,
         public_output: &Vec<GF2Word<T>>,
     ) -> Result<(), Error> {
+        #[derive(Clone)]
+        struct Repetition<T: Value, D>
+        where
+            D: Debug + Default + Digest + FixedOutputReset + Clone + Send,
+        {
+            p1_output: Vec<GF2Word<T>>,
+            p2_output: Vec<GF2Word<T>>,
+            p3_output: Vec<GF2Word<T>>,
+            p1_commitment: Commitment<D>,
+            p2_commitment: Commitment<D>,
+            p3_commitment: Commitment<D>,
+            i: usize,
+        }
+
         let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
 
         // Based on O3 and O5 of (https://eprint.iacr.org/2017/279.pdf)
-        assert_eq!(proof.party_inputs.len(), num_of_repetitions);
-        assert_eq!(proof.commitments.len(), num_of_repetitions);
-        assert_eq!(proof.views.len(), num_of_repetitions);
-        assert_eq!(proof.claimed_trits.len(), num_of_repetitions);
-        assert_eq!(proof.keys.len(), 2 * num_of_repetitions);
+        assert_eq!(proofs.len(), num_of_repetitions);
 
-        let mut all_commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
-        let mut outputs = Vec::<Vec<GF2Word<T>>>::with_capacity(3 * num_of_repetitions);
+        let proof_trits: Vec<_> = proofs.iter().map(|p| p.claimed_trit).collect();
 
-        for (repetition, &party_index) in proof.claimed_trits.iter().enumerate() {
-            let k_i0 = proof.keys[2 * repetition];
-            let mut p = Party::new::<TapeR>(
-                proof.party_inputs[repetition].clone(),
-                k_i0,
-                circuit.num_of_mul_gates(),
-            );
+        let mut repetitions: Vec<_> = proofs
+            .into_par_iter()
+            .enumerate()
+            .map(|(rep, proof)| {
+                let (k_i0, k_i1) = proof.keys;
+                let view_i1 = &proof.view;
+                let mut p = Party::new::<TapeR>(
+                    proof.party_input.clone(),
+                    k_i0,
+                    circuit.num_of_mul_gates(),
+                );
+                let mut p_next = Party::from_tape_and_view(
+                    view_i1.clone(),
+                    Tape::from_key::<TapeR>(k_i1, circuit.num_of_mul_gates()),
+                );
+                let (o0, o1) = circuit.simulate_two_parties(&mut p, &mut p_next).unwrap();
+                let o2 = Self::derive_third_output(public_output, circuit, (&o0, &o1));
 
-            let k_i1 = proof.keys[2 * repetition + 1];
-            let view_i1 = &proof.views[repetition];
+                /*
+                    Based on O6 of (https://eprint.iacr.org/2017/279.pdf)
+                    Instead of checking view consistency, full view is computed through simulation
+                    then security comes from binding property of H used when committing
+                */
+                let view_i0 = &p.view;
 
-            let tape_i1 = Tape::from_key::<TapeR>(k_i1, circuit.num_of_mul_gates());
-            let mut p_next = Party::from_tape_and_view(view_i1.clone(), tape_i1);
+                let pi0_execution = PartyExecution {
+                    key: &k_i0,
+                    view: view_i0,
+                };
 
-            let (o0, o1) = circuit.simulate_two_parties(&mut p, &mut p_next)?;
-            let o2 = Self::derive_third_output(public_output, circuit, (&o0, &o1));
+                // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
+                let cm_i0 = pi0_execution.commit::<D>().unwrap();
 
-            /*
-                Based on O6 of (https://eprint.iacr.org/2017/279.pdf)
-                Instead of checking view consistency, full view is computed through simulation
-                then security comes from binding property of H used when committing
-            */
-            let view_i0 = &p.view;
+                let pi1_execution = PartyExecution {
+                    key: &k_i1,
+                    view: view_i1,
+                };
 
-            let pi0_execution = PartyExecution {
-                key: &k_i0,
-                view: view_i0,
-            };
+                // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
+                let cm_i1 = pi1_execution.commit::<D>().unwrap();
 
-            // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
-            let cm_i0 = pi0_execution.commit::<D>()?;
+                let cm_i2 = proof.commitment.clone();
 
-            let pi1_execution = PartyExecution {
-                key: &k_i1,
-                view: view_i1,
-            };
+                let (commitments, outputs) = match proof.claimed_trit {
+                    0 => ((cm_i0, cm_i1, cm_i2), (o0, o1, o2)),
+                    1 => ((cm_i2, cm_i0, cm_i1), (o2, o0, o1)),
+                    2 => ((cm_i1, cm_i2, cm_i0), (o1, o2, o0)),
+                    _ => panic!("Not trit"),
+                };
 
-            // Based on O4 of (https://eprint.iacr.org/2017/279.pdf)
-            let cm_i1 = pi1_execution.commit::<D>()?;
-
-            let cm_i2 = &proof.commitments[repetition];
-
-            match party_index {
-                0 => {
-                    all_commitments.push(cm_i0);
-                    all_commitments.push(cm_i1);
-                    all_commitments.push(cm_i2.clone());
-
-                    outputs.push(o0);
-                    outputs.push(o1);
-                    outputs.push(o2);
+                Repetition {
+                    p1_output: outputs.0,
+                    p2_output: outputs.1,
+                    p3_output: outputs.2,
+                    p1_commitment: commitments.0,
+                    p2_commitment: commitments.1,
+                    p3_commitment: commitments.2,
+                    i: rep,
                 }
-                1 => {
-                    all_commitments.push(cm_i2.clone());
-                    all_commitments.push(cm_i0);
-                    all_commitments.push(cm_i1);
+            })
+            .collect();
+        repetitions.sort_by_key(|rep| rep.i);
 
-                    outputs.push(o2);
-                    outputs.push(o0);
-                    outputs.push(o1);
-                }
-                2 => {
-                    all_commitments.push(cm_i1);
-                    all_commitments.push(cm_i2.clone());
-                    all_commitments.push(cm_i0);
+        let outputs: Vec<_> = repetitions
+            .iter()
+            .flat_map(|r| {
+                iter::once(r.p1_output.clone())
+                    .chain(iter::once(r.p2_output.clone()))
+                    .chain(iter::once(r.p3_output.clone()))
+            })
+            .collect();
 
-                    outputs.push(o1);
-                    outputs.push(o2);
-                    outputs.push(o0);
-                }
-                _ => panic!("Not trit"),
-            };
-        }
+        let all_commitments: Vec<_> = repetitions
+            .iter()
+            .flat_map(|r| {
+                iter::once(r.p1_commitment.clone())
+                    .chain(iter::once(r.p2_commitment.clone()))
+                    .chain(iter::once(r.p3_commitment.clone()))
+            })
+            .collect();
 
         let pi = PublicInput {
             outputs: &outputs,
@@ -133,7 +150,7 @@ where
         fs_oracle.digest_prover_message(&all_commitments)?;
 
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
-        if opening_indices != proof.claimed_trits {
+        if opening_indices != proof_trits {
             return Err(Error::FiatShamirOutputsMatchingError);
         }
 

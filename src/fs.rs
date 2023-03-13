@@ -58,11 +58,11 @@ impl<D: Clone + Digest> SigmaProtocolStatelessFiatShamir<D> {
     }
 }
 
-pub struct SigmaFS<D: Digest + FixedOutputReset> {
+pub struct SigmaFS<D: Digest + FixedOutputReset + Send> {
     hasher: D,
 }
 
-impl<D: Default + Digest + FixedOutputReset> SigmaFS<D> {
+impl<D: Default + Digest + FixedOutputReset + Send + Clone> SigmaFS<D> {
     pub fn initialize(seed: &[u8]) -> Self {
         let hasher = Digest::new_with_prefix(seed);
         Self { hasher }

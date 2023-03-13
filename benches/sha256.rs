@@ -126,16 +126,33 @@ fn criterion_benchmark(c: &mut Criterion) {
         }
     }
 
-    const SIGMA: usize = 1;
+    const SIGMA: usize = 80;
     fn prover(
-        num_blocks: usize,
-    ) -> (
-        Sha256Circuit,
-        Proof<u32, Keccak256, SIGMA>,
-        Vec<GF2Word<u32>>,
-    ) {
+        preimage: &[u8],
+        circuit: &Sha256Circuit,
+        output: &Vec<GF2Word<u32>>,
+    ) -> Vec<Proof<u32, Keccak256, SIGMA>> {
         let mut rng = thread_rng();
 
+        Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
+            &mut rng, preimage, circuit, output,
+        )
+        .unwrap()
+    }
+
+    fn verifier(
+        circuit: &Sha256Circuit,
+        proof: Vec<Proof<u32, Keccak256, SIGMA>>,
+        output: &Vec<GF2Word<u32>>,
+    ) {
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(proof, circuit, output).unwrap();
+    }
+
+    let num_blocks_range = 1000..1001;
+
+    let mut prover_group = c.benchmark_group("sha256-prover");
+    prover_group.sample_size(10);
+    for num_blocks in num_blocks_range.clone() {
         let string =
             String::from("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl");
         let mut preimage = String::from("");
@@ -143,40 +160,18 @@ fn criterion_benchmark(c: &mut Criterion) {
             preimage = format!("{}{}", preimage, string);
         }
 
+        let preimage_bytes = preimage.as_bytes();
+
         let circuit = Sha256Circuit {
             preimage: preimage.clone(),
         };
 
         let output = circuit.compute(&[]);
 
-        let proof = Prover::<u32, ChaCha20Rng, Keccak256>::prove::<ThreadRng, SIGMA>(
-            &mut rng,
-            preimage.as_bytes(),
-            &circuit,
-            &output,
-        )
-        .unwrap();
-
-        (circuit, proof, output)
-    }
-
-    fn verifier(
-        circuit: &Sha256Circuit,
-        proof: &Proof<u32, Keccak256, SIGMA>,
-        output: &Vec<GF2Word<u32>>,
-    ) {
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(proof, circuit, output).unwrap();
-    }
-
-    let num_blocks_range = 1..=10;
-
-    let mut prover_group = c.benchmark_group("sha256-prover");
-    prover_group.sample_size(10);
-    for num_blocks in num_blocks_range.clone() {
         prover_group.bench_with_input(
             BenchmarkId::from_parameter(num_blocks),
-            &num_blocks,
-            |b, &num_blocks| b.iter(|| prover(num_blocks)),
+            &(preimage_bytes, circuit, output),
+            |b, (preimage, circuit, output)| b.iter(|| prover(preimage, circuit, output)),
         );
     }
     prover_group.finish();
@@ -184,11 +179,26 @@ fn criterion_benchmark(c: &mut Criterion) {
     let mut verifier_group = c.benchmark_group("sha256-verifier");
     verifier_group.sample_size(10);
     for num_blocks in num_blocks_range {
-        let (circuit, proof, output) = prover(num_blocks);
+        let string =
+            String::from("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl");
+        let mut preimage = String::from("");
+        for _ in 0..num_blocks {
+            preimage = format!("{}{}", preimage, string);
+        }
+
+        let preimage_bytes = preimage.as_bytes();
+
+        let circuit = Sha256Circuit {
+            preimage: preimage.clone(),
+        };
+
+        let output = circuit.compute(&[]);
+
+        let proof = prover(preimage_bytes, &circuit, &output);
         verifier_group.bench_with_input(
             BenchmarkId::from_parameter(num_blocks),
             &(circuit, proof, output),
-            |b, (circuit, proof, output)| b.iter(|| verifier(circuit, proof, output)),
+            |b, (circuit, proof, output)| b.iter(|| verifier(circuit, proof.clone(), output)),
         );
     }
     verifier_group.finish();

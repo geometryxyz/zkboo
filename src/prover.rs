@@ -1,7 +1,8 @@
-use rand::SeedableRng;
+use rand::{thread_rng, SeedableRng};
 use rand_core::{CryptoRng, RngCore};
+use rayon::prelude::*;
 use sha3::{digest::FixedOutputReset, Digest};
-use std::{fmt::Debug, marker::PhantomData};
+use std::{fmt::Debug, iter, marker::PhantomData};
 
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
@@ -27,12 +28,12 @@ pub struct RepetitionOutput<T: Value> {
 pub struct Prover<T: Value, TapeR, D>(PhantomData<(T, TapeR, D)>)
 where
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Debug + Default + Digest + FixedOutputReset;
+    D: Debug + Default + Digest + FixedOutputReset + Send + Clone;
 
 impl<T: Value, TapeR, D> Prover<T, TapeR, D>
 where
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
-    D: Debug + Default + Digest + FixedOutputReset,
+    D: Debug + Default + Digest + FixedOutputReset + Send + Clone,
 {
     pub fn share<R: RngCore + CryptoRng>(rng: &mut R, input: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
         let share_1: Vec<u8> = (0..input.len()).map(|_| u8::gen_rand(rng)).collect();
@@ -78,57 +79,133 @@ where
         }
     }
 
-    pub fn prove<R: RngCore + CryptoRng, const SIGMA: usize>(
+    pub fn prove<R, const SIGMA: usize>(
         rng: &mut R,
         witness: &[u8],
         circuit: &impl Circuit<T>,
         public_output: &Vec<GF2Word<T>>,
-    ) -> Result<Proof<T, D, SIGMA>, Error> {
-        let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
+    ) -> Result<Vec<Proof<T, D, SIGMA>>, Error>
+    where
+        R: RngCore + CryptoRng,
+    {
+        #[derive(Clone)]
+        struct Repetition<T: Value, D>
+        where
+            D: Debug + Default + Digest + FixedOutputReset + Clone + Send,
+        {
+            p1_output: Vec<GF2Word<T>>,
+            p2_output: Vec<GF2Word<T>>,
+            p3_output: Vec<GF2Word<T>>,
+            p1_view: View<T>,
+            p2_view: View<T>,
+            p3_view: View<T>,
+            p1_commitment: Commitment<D>,
+            p2_commitment: Commitment<D>,
+            p3_commitment: Commitment<D>,
+            i: usize,
+        }
 
-        let mut key_manager = KeyManager::new(num_of_repetitions, rng);
+        impl<T: Value, D> Repetition<T, D>
+        where
+            D: Debug + Default + Digest + FixedOutputReset + Clone + Send,
+        {
+            fn view(&self, party_idx: u8) -> View<T> {
+                if party_idx == 0 {
+                    self.p1_view.clone()
+                } else if party_idx == 1 {
+                    self.p2_view.clone()
+                } else if party_idx == 2 {
+                    self.p3_view.clone()
+                } else {
+                    panic!()
+                }
+            }
 
-        let mut outputs = Vec::<Vec<GF2Word<T>>>::with_capacity(3 * num_of_repetitions);
-        let mut all_commitments = Vec::<Commitment<D>>::with_capacity(3 * num_of_repetitions);
-        let mut all_views = Vec::with_capacity(3 * num_of_repetitions);
-
-        for _ in 0..num_of_repetitions {
-            let k1 = key_manager.request_key();
-            let k2 = key_manager.request_key();
-            let k3 = key_manager.request_key();
-
-            let repetition_output = Self::prove_repetition(rng, witness, (k1, k2, k3), circuit);
-
-            // record all outputs
-            outputs.push(repetition_output.party_outputs.0);
-            outputs.push(repetition_output.party_outputs.1);
-            outputs.push(repetition_output.party_outputs.2);
-
-            // record all views
-            all_views.push(repetition_output.party_views.0);
-            all_views.push(repetition_output.party_views.1);
-            all_views.push(repetition_output.party_views.2);
-
-            let views_len = all_views.len();
-
-            let p1_execution = PartyExecution {
-                key: &k1,
-                view: &all_views[views_len - 3],
-            };
-            let p2_execution = PartyExecution {
-                key: &k2,
-                view: &all_views[views_len - 2],
-            };
-            let p3_execution = PartyExecution {
-                key: &k3,
-                view: &all_views[views_len - 1],
-            };
-
-            for pi_execution in [p1_execution, p2_execution, p3_execution] {
-                let cmi = pi_execution.commit()?;
-                all_commitments.push(cmi);
+            fn commitment(&self, party_idx: u8) -> Commitment<D> {
+                if party_idx == 0 {
+                    self.p1_commitment.clone()
+                } else if party_idx == 1 {
+                    self.p2_commitment.clone()
+                } else if party_idx == 2 {
+                    self.p3_commitment.clone()
+                } else {
+                    panic!()
+                }
             }
         }
+
+        let num_of_repetitions = num_of_repetitions_given_desired_security(SIGMA);
+        let mut key_manager = KeyManager::new(num_of_repetitions, rng);
+
+        let (k1s, (k2s, k3s)): (Vec<Key>, (Vec<Key>, Vec<Key>)) = (0..num_of_repetitions)
+            .map(|_| {
+                let k1 = key_manager.request_key();
+                let k2 = key_manager.request_key();
+                let k3 = key_manager.request_key();
+
+                (k1, (k2, k3))
+            })
+            .unzip();
+
+        let mut repetitions: Vec<_> = k1s
+            .into_par_iter()
+            .zip(k2s.into_par_iter())
+            .zip(k3s.into_par_iter())
+            .enumerate()
+            .map(|(i, ((k1, k2), k3))| {
+                let output =
+                    Self::prove_repetition(&mut thread_rng(), witness, (k1, k2, k3), circuit);
+                let (p1_output, p2_output, p3_output) = output.party_outputs;
+                let (p1_view, p2_view, p3_view) = output.party_views;
+
+                let p1_commitment = PartyExecution {
+                    key: &k1,
+                    view: &p1_view,
+                }
+                .commit()
+                .unwrap();
+
+                let p2_commitment = PartyExecution {
+                    key: &k2,
+                    view: &p2_view,
+                }
+                .commit()
+                .unwrap();
+
+                let p3_commitment = PartyExecution {
+                    key: &k3,
+                    view: &p3_view,
+                }
+                .commit()
+                .unwrap();
+
+                Repetition {
+                    p1_output,
+                    p2_output,
+                    p3_output,
+                    p1_view,
+                    p2_view,
+                    p3_view,
+                    p1_commitment,
+                    p2_commitment,
+                    p3_commitment,
+                    i,
+                }
+            })
+            .collect();
+
+        repetitions.sort_by_key(|rep| rep.i);
+        // TODO: remove hardcoded seed
+        let mut fs_oracle = SigmaFS::<D>::initialize(&[0u8]);
+
+        let outputs: Vec<_> = repetitions
+            .iter()
+            .flat_map(|r| {
+                iter::once(r.p1_output.clone())
+                    .chain(iter::once(r.p2_output.clone()))
+                    .chain(iter::once(r.p3_output.clone()))
+            })
+            .collect();
 
         let pi = PublicInput {
             outputs: &outputs,
@@ -136,45 +213,47 @@ where
             hash_len: HASH_LEN,
             security_param: SIGMA,
         };
-
-        // TODO: remove hardcoded seed
-        let mut fs_oracle = SigmaFS::<D>::initialize(&[0u8]);
         fs_oracle.digest_public_data(&pi)?;
+
+        let all_commitments: Vec<_> = repetitions
+            .iter()
+            .flat_map(|r| {
+                iter::once(r.p1_commitment.clone())
+                    .chain(iter::once(r.p2_commitment.clone()))
+                    .chain(iter::once(r.p3_commitment.clone()))
+            })
+            .collect();
+
         fs_oracle.digest_prover_message(&all_commitments)?;
 
         let opening_indices = fs_oracle.sample_trits(num_of_repetitions);
 
-        let mut claimed_trits = Vec::with_capacity(num_of_repetitions);
-        let mut party_inputs = Vec::with_capacity(num_of_repetitions);
+        let proofs = repetitions
+            .iter()
+            .zip(opening_indices)
+            .enumerate()
+            .map(|(repetition, (r, party_index))| {
+                let claimed_trit = party_index;
+                let i0 = party_index;
+                let i1 = (party_index + 1) % 3;
+                let i2 = (party_index + 2) % 3;
+                let party_input = r.view(i0).input;
+                let keys = (
+                    key_manager.request_key_i(repetition * 3 + i0 as usize),
+                    key_manager.request_key_i(repetition * 3 + i1 as usize),
+                );
+                let view = r.view(i1);
+                let commitment = r.commitment(i2);
 
-        let mut keys = Vec::<Key>::with_capacity(2 * num_of_repetitions);
-        let mut views = Vec::with_capacity(num_of_repetitions);
-        let mut commitments = Vec::with_capacity(2 * num_of_repetitions);
-
-        for (repetition, &party_index) in opening_indices.iter().enumerate() {
-            let party_index = party_index as usize;
-            let i0 = repetition * 3 + party_index;
-            let i1 = repetition * 3 + ((party_index + 1) % 3);
-            let i2 = repetition * 3 + ((party_index + 2) % 3);
-
-            party_inputs.push(std::mem::take(&mut all_views[i0].input));
-
-            claimed_trits.push(party_index as u8);
-
-            views.push(std::mem::take(&mut all_views[i1]));
-
-            keys.push(key_manager.request_key_i(i0));
-            keys.push(key_manager.request_key_i(i1));
-
-            commitments.push(std::mem::take(&mut all_commitments[i2]));
-        }
-
-        Ok(Proof {
-            party_inputs,
-            commitments,
-            views,
-            keys,
-            claimed_trits,
-        })
+                Proof {
+                    party_input,
+                    commitment,
+                    view,
+                    keys,
+                    claimed_trit,
+                }
+            })
+            .collect();
+        Ok(proofs)
     }
 }
