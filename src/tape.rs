@@ -6,7 +6,7 @@ use std::{
 use rand::{CryptoRng, RngCore, SeedableRng};
 
 use crate::{
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     key::Key,
 };
 
@@ -19,7 +19,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     offset: usize,
@@ -34,7 +34,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     /// Initialise a tape with `len` entries using `key` as random seed.

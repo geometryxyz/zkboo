@@ -1,4 +1,6 @@
 pub mod add_mod;
+pub mod prepare;
+pub mod sha256;
 pub mod verifier;
 
 use std::{
@@ -8,7 +10,7 @@ use std::{
 
 use crate::{
     error::Error,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     party::Party,
 };
 
@@ -24,7 +26,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let output_p1 = input_p1.0 ^ input_p1.1;
@@ -49,7 +51,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     let r1 = p1.read_tape();
@@ -76,7 +78,7 @@ where
     (output_p1, output_p2, output_p3)
 }
 
-pub fn and_verify<T>(
+pub fn mpc_and_verify<T>(
     input_p: (GF2Word<T>, GF2Word<T>),
     input_p_next: (GF2Word<T>, GF2Word<T>),
     p: &mut Party<T>,
@@ -90,7 +92,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + PartialEq,
 {

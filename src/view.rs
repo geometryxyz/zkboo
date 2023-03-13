@@ -5,7 +5,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand};
+use crate::gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand};
 
 /// A party's `View` consists of:
 /// - input: the party's initial share of the witness; and
@@ -19,11 +19,11 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     offset: usize,
-    pub input: Vec<GF2Word<T>>,
+    pub input: Vec<u8>,
     pub messages: Vec<GF2Word<T>>,
 }
 
@@ -35,10 +35,10 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
-    pub fn new(input: Vec<GF2Word<T>>) -> Self {
+    pub fn new(input: Vec<u8>) -> Self {
         Self {
             input,
             messages: vec![],

@@ -18,7 +18,7 @@ use crate::{
     commitment::Commitment,
     data_structures::PublicInput,
     error::Error,
-    gf2_word::{BitUtils, BytesInfo, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GenRand},
 };
 
 pub struct SigmaProtocolStatelessFiatShamir<D: Clone + Digest>(PhantomData<D>);
@@ -86,7 +86,7 @@ impl<D: Default + Digest + FixedOutputReset> SigmaFS<D> {
             + BitAnd<Output = T>
             + BitXor<Output = T>
             + BitUtils
-            + BytesInfo
+            + BytesUitls
             + GenRand
             + Serialize,
     {

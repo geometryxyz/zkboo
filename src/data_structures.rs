@@ -9,7 +9,7 @@ use sha3::Digest;
 use crate::{
     commitment::{Blinding, Commitment},
     error::Error,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     key::Key,
     view::View,
 };
@@ -23,7 +23,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
 {
     pub key: &'a Key,
@@ -41,15 +41,25 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + Serialize,
 {
     pub fn commit<D: Default + Digest>(&self) -> Result<Commitment<D>, Error> {
         let blinding = Blinding(self.key);
+        let messages_bytes: Vec<u8> = self
+            .view
+            .messages
+            .iter()
+            .flat_map(|msg| msg.value.to_bytes())
+            .collect();
 
-        // we omit commiting to full view to make sure that offset is not included which is just helper variable 
-        let commitment = Commitment::<D>::commit(&blinding, &[&self.view.input, &self.view.messages])?;
+        // TODO: consider more optimal way to prepare message for committing
+        // we omit commiting to full view to make sure that offset is not included which is just helper variable
+        let commitment = Commitment::<D>::commit(
+            &blinding,
+            &[self.view.input.clone(), messages_bytes].concat(),
+        )?;
         Ok(commitment)
     }
 }
@@ -63,7 +73,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + Serialize,
 {
@@ -82,12 +92,12 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + Serialize,
     D: Default + Digest,
 {
-    pub party_inputs: Vec<Vec<GF2Word<T>>>,
+    pub party_inputs: Vec<Vec<u8>>,
     pub commitments: Vec<Commitment<D>>,
     pub views: Vec<View<T>>,
     pub keys: Vec<Key>,

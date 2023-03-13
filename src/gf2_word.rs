@@ -6,9 +6,10 @@ use std::{
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
 
-pub trait BytesInfo {
+pub trait BytesUitls {
     fn to_bytes(&self) -> Vec<u8>;
     fn bytes_len() -> usize;
+    fn from_le_bytes(le_bytes: &[u8]) -> Self;
 }
 
 pub trait GenRand {
@@ -87,6 +88,16 @@ pub trait BitUtils: BitTrait {
         assert!(n <= Self::bits_len());
         (*self >> n) | (*self << (Self::bits_len() - n))
     }
+
+    fn left_shift(&self, n: usize) -> Self {
+        assert!(n <= Self::bits_len());
+        *self << n
+    }
+
+    fn right_shift(&self, n: usize) -> Self {
+        assert!(n <= Self::bits_len());
+        *self >> n
+    }
 }
 
 impl BitTrait for u8 {}
@@ -96,13 +107,17 @@ impl BitUtils for u8 {
     }
 }
 
-impl BytesInfo for u8 {
+impl BytesUitls for u8 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
 
     fn bytes_len() -> usize {
         1
+    }
+    fn from_le_bytes(le_bytes: &[u8]) -> Self {
+        assert_eq!(le_bytes.len(), Self::bytes_len());
+        Self::from_le_bytes(le_bytes.try_into().unwrap())
     }
 }
 
@@ -121,12 +136,18 @@ impl BitUtils for u32 {
     }
 }
 
-impl BytesInfo for u32 {
+impl BytesUitls for u32 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
+
     fn bytes_len() -> usize {
         4
+    }
+
+    fn from_le_bytes(le_bytes: &[u8]) -> Self {
+        assert_eq!(le_bytes.len(), Self::bytes_len());
+        Self::from_le_bytes(le_bytes.try_into().unwrap())
     }
 }
 
@@ -143,12 +164,16 @@ impl BitUtils for u64 {
     }
 }
 
-impl BytesInfo for u64 {
+impl BytesUitls for u64 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
     fn bytes_len() -> usize {
         8
+    }
+    fn from_le_bytes(le_bytes: &[u8]) -> Self {
+        assert_eq!(le_bytes.len(), Self::bytes_len());
+        Self::from_le_bytes(le_bytes.try_into().unwrap())
     }
 }
 
@@ -165,12 +190,16 @@ impl BitUtils for u128 {
     }
 }
 
-impl BytesInfo for u128 {
+impl BytesUitls for u128 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
     fn bytes_len() -> usize {
         16
+    }
+    fn from_le_bytes(le_bytes: &[u8]) -> Self {
+        assert_eq!(le_bytes.len(), Self::bytes_len());
+        Self::from_le_bytes(le_bytes.try_into().unwrap())
     }
 }
 
@@ -186,7 +215,7 @@ impl GenRand for u128 {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GF2Word<T>
 where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
 {
     /// The value represented by this GF2 word
     pub value: T,
@@ -196,7 +225,7 @@ where
 
 impl<T> From<T> for GF2Word<T>
 where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
 {
     fn from(value: T) -> Self {
         GF2Word::<T> {
@@ -207,7 +236,7 @@ where
 }
 impl<T> BitAnd for GF2Word<T>
 where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
 {
     type Output = Self;
 
@@ -221,7 +250,7 @@ where
 
 impl<T> BitXor for GF2Word<T>
 where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesInfo + GenRand,
+    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
 {
     type Output = Self;
 

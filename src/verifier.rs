@@ -1,5 +1,5 @@
 use std::{
-    fmt::Display,
+    fmt::{Debug, Display},
     marker::PhantomData,
     ops::{BitAnd, BitXor},
 };
@@ -15,7 +15,7 @@ use crate::{
     data_structures::{PartyExecution, Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
-    gf2_word::{BitUtils, BytesInfo, GF2Word, GenRand},
+    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
     key::Key,
     num_of_repetitions_given_desired_security,
     party::Party,
@@ -30,7 +30,7 @@ where
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand,
     D: Digest + FixedOutputReset,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng;
@@ -40,10 +40,11 @@ where
     T: Copy
         + Default
         + Display
+        + Debug
         + BitAnd<Output = T>
         + BitXor<Output = T>
         + BitUtils
-        + BytesInfo
+        + BytesUitls
         + GenRand
         + PartialEq
         + Serialize,
