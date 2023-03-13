@@ -1,8 +1,12 @@
 use rand::{thread_rng, SeedableRng};
 use rand_core::{CryptoRng, RngCore};
-use rayon::prelude::*;
 use sha3::{digest::FixedOutputReset, Digest};
 use std::{fmt::Debug, iter, marker::PhantomData};
+
+use crate::multicore::IntoParallelIterator;
+
+#[cfg(feature = "multicore")]
+use crate::multicore::{IndexedParallelIterator, ParallelIterator};
 
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
