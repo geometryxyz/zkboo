@@ -50,8 +50,7 @@ mod composition_tests {
         let ins_1: Vec<u8> = ins_2.iter().zip(ins_3.iter()).map(|(in_2, in_3)| x ^ in_2 ^ in_3).collect();
 
         // Verifier computes outside of the circuit
-        let rhs = ins_2.iter().zip(ins_3.iter()).map(|(in_2, in_3)| in_2 ^ in_3);
-        let rhs = rhs.fold(0, |acc, rhs_i| acc ^ rhs_i);
+        let rhs = ins_2.iter().zip(ins_3.iter()).fold(0, |acc, (in_2, in_3)| acc ^ in_2 ^ in_3);
 
         // Prover computes inside the circuit
         let lhs = ins_1.iter().fold(0, |acc, rhs_i| acc ^ rhs_i);
