@@ -14,6 +14,8 @@ pub mod view;
 
 pub mod gadgets;
 
+mod composition;
+
 pub fn num_of_repetitions_given_desired_security(sigma: usize) -> usize {
     // log_2(3) - 1
     let log_2_3_minus_1: f64 = 0.58496;
