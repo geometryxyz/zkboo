@@ -6,6 +6,7 @@ pub mod error;
 pub mod fs;
 pub mod gf2_word;
 pub mod key;
+mod multicore;
 pub mod party;
 pub mod prover;
 pub mod tape;

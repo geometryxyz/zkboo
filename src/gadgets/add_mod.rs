@@ -306,7 +306,7 @@ mod adder_tests {
             )
             .unwrap();
 
-            Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output).unwrap();
+            Verifier::<u32, ChaCha20Rng, Keccak256>::verify(proof, &circuit, &output).unwrap();
         }
     }
 }

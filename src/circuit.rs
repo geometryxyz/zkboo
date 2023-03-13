@@ -7,7 +7,7 @@ use crate::{
 pub type Output<T> = Vec<GF2Word<T>>;
 pub type TwoThreeDecOutput<T> = (Output<T>, Output<T>, Output<T>);
 
-pub trait Circuit<T: Value> {
+pub trait Circuit<T: Value>: Sync {
     fn compute(&self, input: &[u8]) -> Vec<GF2Word<T>>;
 
     /// Decompose this circuit into 3 branches such that the values computed in
@@ -153,6 +153,6 @@ mod circuit_tests {
         )
         .unwrap();
 
-        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(&proof, &circuit, &output).unwrap();
+        Verifier::<u32, ChaCha20Rng, Keccak256>::verify(proof, &circuit, &output).unwrap();
     }
 }

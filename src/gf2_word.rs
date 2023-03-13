@@ -41,6 +41,8 @@ pub trait Value:
     + BytesUtils
     + GenRand
     + Serialize
+    + Send
+    + Sync
 {
 }
 
