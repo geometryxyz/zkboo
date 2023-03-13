@@ -1,43 +1,18 @@
-use std::{
-    fmt::Display,
-    ops::{BitAnd, BitXor},
-};
-
 use serde::{Deserialize, Serialize};
 
-use crate::gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand};
+use crate::gf2_word::{GF2Word, Value};
 
 /// A party's `View` consists of:
 /// - input: the party's initial share of the witness; and
 /// - messages: the messages sent to the party.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct View<T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+pub struct View<T: Value> {
     offset: usize,
     pub input: Vec<u8>,
     pub messages: Vec<GF2Word<T>>,
 }
 
-impl<T> View<T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+impl<T: Value> View<T> {
     pub fn new(input: Vec<u8>) -> Self {
         Self {
             input,

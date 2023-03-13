@@ -1,11 +1,7 @@
-use std::{
-    fmt::{Debug, Display},
-    marker::PhantomData,
-    ops::{BitAnd, BitXor},
-};
+use std::marker::PhantomData;
 
 use rand::{CryptoRng, RngCore, SeedableRng};
-use serde::Serialize;
+
 use sha3::{digest::FixedOutputReset, Digest};
 
 use crate::{
@@ -15,39 +11,21 @@ use crate::{
     data_structures::{PartyExecution, Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
-    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+    gf2_word::{GF2Word, Value},
     key::Key,
     num_of_repetitions_given_desired_security,
     party::Party,
     tape::Tape,
 };
 
-pub struct Verifier<T, TapeR, D>(PhantomData<(T, TapeR, D)>)
+pub struct Verifier<T: Value, TapeR, D>(PhantomData<(T, TapeR, D)>)
 where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
     D: Digest + FixedOutputReset,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng;
 
 impl<T, TapeR, D> Verifier<T, TapeR, D>
 where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand
-        + PartialEq
-        + Serialize,
+    T: Value + PartialEq,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
     D: Clone + Default + Digest + FixedOutputReset,
 {

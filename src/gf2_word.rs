@@ -1,12 +1,12 @@
 use std::{
-    fmt::Display,
+    fmt::{Debug, Display},
     ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr},
 };
 
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
 
-pub trait BytesUitls {
+pub trait BytesUtils {
     fn to_bytes(&self) -> Vec<u8>;
     fn bytes_len() -> usize;
     fn from_le_bytes(le_bytes: &[u8]) -> Self;
@@ -27,6 +27,20 @@ pub trait BitTrait:
     + Not<Output = Self>
     + Eq
     + PartialEq
+{
+}
+
+pub trait Value:
+    Copy
+    + Debug
+    + Default
+    + Display
+    + BitAnd<Output = Self>
+    + BitXor<Output = Self>
+    + BitUtils
+    + BytesUtils
+    + GenRand
+    + Serialize
 {
 }
 
@@ -101,13 +115,14 @@ pub trait BitUtils: BitTrait {
 }
 
 impl BitTrait for u8 {}
+impl Value for u8 {}
 impl BitUtils for u8 {
     fn bits_len() -> usize {
         Self::BITS as usize
     }
 }
 
-impl BytesUitls for u8 {
+impl BytesUtils for u8 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
@@ -130,13 +145,14 @@ impl GenRand for u8 {
 }
 
 impl BitTrait for u32 {}
+impl Value for u32 {}
 impl BitUtils for u32 {
     fn bits_len() -> usize {
         Self::BITS as usize
     }
 }
 
-impl BytesUitls for u32 {
+impl BytesUtils for u32 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
@@ -158,13 +174,14 @@ impl GenRand for u32 {
 }
 
 impl BitTrait for u64 {}
+impl Value for u64 {}
 impl BitUtils for u64 {
     fn bits_len() -> usize {
         Self::BITS as usize
     }
 }
 
-impl BytesUitls for u64 {
+impl BytesUtils for u64 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
@@ -184,13 +201,14 @@ impl GenRand for u64 {
 }
 
 impl BitTrait for u128 {}
+impl Value for u128 {}
 impl BitUtils for u128 {
     fn bits_len() -> usize {
         Self::BITS as usize
     }
 }
 
-impl BytesUitls for u128 {
+impl BytesUtils for u128 {
     fn to_bytes(&self) -> Vec<u8> {
         self.to_be_bytes().to_vec()
     }
@@ -213,20 +231,14 @@ impl GenRand for u128 {
 
 /// A wrapper type for which we implement `BitAnd`, `BitXor`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct GF2Word<T>
-where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
-{
+pub struct GF2Word<T: Value> {
     /// The value represented by this GF2 word
     pub value: T,
     /// Number of bits in `T`
     pub size: usize,
 }
 
-impl<T> From<T> for GF2Word<T>
-where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
-{
+impl<T: Value> From<T> for GF2Word<T> {
     fn from(value: T) -> Self {
         GF2Word::<T> {
             value,
@@ -234,10 +246,7 @@ where
         }
     }
 }
-impl<T> BitAnd for GF2Word<T>
-where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
-{
+impl<T: Value> BitAnd for GF2Word<T> {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self {
@@ -248,10 +257,7 @@ where
     }
 }
 
-impl<T> BitXor for GF2Word<T>
-where
-    T: Copy + Default + Display + BitAnd<Output = T> + BitXor<Output = T> + BytesUitls + GenRand,
-{
+impl<T: Value> BitXor for GF2Word<T> {
     type Output = Self;
 
     fn bitxor(self, rhs: Self) -> Self {

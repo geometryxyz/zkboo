@@ -1,24 +1,9 @@
-use std::{
-    fmt::Display,
-    ops::{BitAnd, BitXor},
-};
-
 use crate::{
-    gf2_word::{Bit, BitUtils, BytesUitls, GF2Word, GenRand},
+    gf2_word::{Bit, GF2Word, Value},
     party::Party,
 };
 
-pub fn adder<T>(x: T, y: T) -> T
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+pub fn adder<T: Value>(x: T, y: T) -> T {
     let mut carry = T::zero();
 
     for i in 0..T::bytes_len() * 8 - 1 {
@@ -54,7 +39,7 @@ fn bit_and(input_p1: (Bit, Bit), input_p2: (Bit, Bit), r_p1: Bit, r_p2: Bit) -> 
         ^ (r_p1 ^ r_p2)
 }
 
-pub fn mpc_add_mod_k<T>(
+pub fn mpc_add_mod_k<T: Value>(
     input_p1: GF2Word<T>,
     input_p2: GF2Word<T>,
     input_p3: GF2Word<T>,
@@ -62,17 +47,7 @@ pub fn mpc_add_mod_k<T>(
     p1: &mut Party<T>,
     p2: &mut Party<T>,
     p3: &mut Party<T>,
-) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>) {
     let rand_p1 = p1.read_tape();
     let rand_p2 = p2.read_tape();
     let rand_p3 = p3.read_tape();
@@ -117,24 +92,14 @@ where
 
 /// Performs addition modulo 2^(T::bits_size)
 /// Works bit by bit and appends full carry in view, that's why it's counted as just one gate
-pub fn mpc_add_mod<T>(
+pub fn mpc_add_mod<T: Value>(
     input_p1: (GF2Word<T>, GF2Word<T>),
     input_p2: (GF2Word<T>, GF2Word<T>),
     input_p3: (GF2Word<T>, GF2Word<T>),
     p1: &mut Party<T>,
     p2: &mut Party<T>,
     p3: &mut Party<T>,
-) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+) -> (GF2Word<T>, GF2Word<T>, GF2Word<T>) {
     let rand_p1 = p1.read_tape();
     let rand_p2 = p2.read_tape();
     let rand_p3 = p3.read_tape();
@@ -177,22 +142,12 @@ where
     (o1, o2, o3)
 }
 
-pub fn add_mod_verify<T>(
+pub fn add_mod_verify<T: Value>(
     input_p: (GF2Word<T>, GF2Word<T>),
     input_p_next: (GF2Word<T>, GF2Word<T>),
     p: &mut Party<T>,
     p_next: &mut Party<T>,
-) -> (GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+) -> (GF2Word<T>, GF2Word<T>) {
     let ri = p.read_tape();
     let ri_next = p_next.read_tape();
 
@@ -223,23 +178,13 @@ where
     (o1, o2)
 }
 
-pub fn add_mod_verify_k<T>(
+pub fn add_mod_verify_k<T: Value>(
     input_p: GF2Word<T>,
     input_p_next: GF2Word<T>,
     k: GF2Word<T>,
     p: &mut Party<T>,
     p_next: &mut Party<T>,
-) -> (GF2Word<T>, GF2Word<T>)
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+) -> (GF2Word<T>, GF2Word<T>) {
     let ri = p.read_tape();
     let ri_next = p_next.read_tape();
 
@@ -272,10 +217,6 @@ where
 
 #[cfg(test)]
 mod adder_tests {
-    use std::{
-        fmt::{Debug, Display},
-        ops::{BitAnd, BitXor},
-    };
 
     use crate::{
         circuit::{Circuit, Output},
@@ -284,39 +225,15 @@ mod adder_tests {
             add_mod::{add_mod_verify_k, adder, mpc_add_mod_k},
             prepare::generic_parse,
         },
-        gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+        gf2_word::{GF2Word, Value},
         party::Party,
     };
 
-    pub struct AddModKCircuit<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesUitls
-            + GenRand,
-    {
+    pub struct AddModKCircuit<T: Value> {
         pub k: GF2Word<T>,
     }
 
-    impl<T> Circuit<T> for AddModKCircuit<T>
-    where
-        T: Copy
-            + Default
-            + Display
-            + Debug
-            + PartialEq
-            + BitAnd<Output = T>
-            + BitXor<Output = T>
-            + BitUtils
-            + BytesUitls
-            + GenRand,
-    {
+    impl<T: Value> Circuit<T> for AddModKCircuit<T> {
         fn compute(&self, input: &[u8]) -> Vec<GF2Word<T>> {
             let input = generic_parse(input, self.party_input_len())[0];
             let res = adder(input.value, self.k.value);

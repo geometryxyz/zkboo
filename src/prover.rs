@@ -1,12 +1,7 @@
 use rand::SeedableRng;
 use rand_core::{CryptoRng, RngCore};
-use serde::Serialize;
 use sha3::{digest::FixedOutputReset, Digest};
-use std::{
-    fmt::{Debug, Display},
-    marker::PhantomData,
-    ops::{BitAnd, BitXor},
-};
+use std::{fmt::Debug, marker::PhantomData};
 
 use crate::{
     circuit::{Circuit, TwoThreeDecOutput},
@@ -15,7 +10,7 @@ use crate::{
     data_structures::{PartyExecution, Proof, PublicInput},
     error::Error,
     fs::SigmaFS,
-    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+    gf2_word::{GF2Word, GenRand, Value},
     key::{Key, KeyManager},
     num_of_repetitions_given_desired_security,
     party::Party,
@@ -24,48 +19,18 @@ use crate::{
 
 pub type Share<T> = Vec<GF2Word<T>>;
 
-pub struct RepetitionOutput<T>
-where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+pub struct RepetitionOutput<T: Value> {
     pub party_outputs: TwoThreeDecOutput<T>,
     pub party_views: (View<T>, View<T>, View<T>),
 }
 
-pub struct Prover<T, TapeR, D>(PhantomData<(T, TapeR, D)>)
+pub struct Prover<T: Value, TapeR, D>(PhantomData<(T, TapeR, D)>)
 where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
     D: Debug + Default + Digest + FixedOutputReset;
 
-impl<T, TapeR, D> Prover<T, TapeR, D>
+impl<T: Value, TapeR, D> Prover<T, TapeR, D>
 where
-    T: Copy
-        + Default
-        + Display
-        + Debug
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand
-        + Serialize,
     TapeR: SeedableRng<Seed = Key> + RngCore + CryptoRng,
     D: Debug + Default + Digest + FixedOutputReset,
 {

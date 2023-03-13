@@ -1,42 +1,17 @@
-use std::{
-    fmt::Display,
-    ops::{BitAnd, BitXor},
-};
-
 use rand::{CryptoRng, RngCore, SeedableRng};
 
 use crate::{
-    gf2_word::{BitUtils, BytesUitls, GF2Word, GenRand},
+    gf2_word::{GF2Word, Value},
     key::Key,
 };
 
 /// A tape of values that can be read at its current `offset`.
-pub struct Tape<T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+pub struct Tape<T: Value> {
     offset: usize,
     tape: Vec<GF2Word<T>>,
 }
 
-impl<T> Tape<T>
-where
-    T: Copy
-        + Default
-        + Display
-        + BitAnd<Output = T>
-        + BitXor<Output = T>
-        + BitUtils
-        + BytesUitls
-        + GenRand,
-{
+impl<T: Value> Tape<T> {
     /// Initialise a tape with `len` entries using `key` as random seed.
     pub fn from_key<R: SeedableRng<Seed = Key> + RngCore + CryptoRng>(
         key: Key,
